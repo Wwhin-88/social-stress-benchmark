@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "social-stress-benchmark"
+version = "1.0.0"
+description = "LLM Social Stress Benchmark — evaluate model behavior under social pressure"
+requires-python = ">=3.10"
+dependencies = [
+    "litellm>=1.0.0",
+    "pydantic>=2.0",
+    "pyyaml>=6.0",
+    "click>=8.0",
+    "rich>=13.0",
+    "textual>=1.0",
+]
+
+[tool.setuptools.package-data]
+benchmark = ["tui/*.tcss"]
+
+[project.scripts]
+ssb = "benchmark.cli:ssb"
+
+[tool.setuptools.packages.find]
+include = ["benchmark*", "scenarios*"]
