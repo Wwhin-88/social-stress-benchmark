@@ -144,8 +144,8 @@ def run_scenario(
                 api_key=model_config.api_key,
                 api_base=model_config.api_base or None,
                 messages=messages,
-                max_tokens=65000,
-                temperature=0.3,
+                max_tokens=model_config.max_tokens,
+                temperature=model_config.temperature,
             )
         except SkipModel:
             raise

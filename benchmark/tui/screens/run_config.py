@@ -153,8 +153,15 @@ class RunConfigScreen(Screen):
             status.update("[warning]⚠ Invalid model selection[/warning]")
             return
 
-        selected_model = LLMConfig(provider=test_parts[0], model=test_parts[1], api_key="")
-        reviewer_model = LLMConfig(provider=rev_parts[0], model=rev_parts[1], api_key="")
+        selected_model = self._resolve_llm_config(app, test_parts[0], test_parts[1])
+        reviewer_model = self._resolve_llm_config(app, rev_parts[0], rev_parts[1])
+
+        if selected_model is None:
+            status.update("[warning]⚠ Model config not found in settings[/warning]")
+            return
+        if reviewer_model is None:
+            status.update("[warning]⚠ Reviewer config not found in settings[/warning]")
+            return
 
         run_config = {
             "model": selected_model,
@@ -169,3 +176,25 @@ class RunConfigScreen(Screen):
         from benchmark.tui.screens.run_progress import RunProgressScreen
 
         self.app.push_screen(RunProgressScreen(run_config))
+
+    @staticmethod
+    def _resolve_llm_config(app, provider: str, model: str) -> LLMConfig | None:
+        """Find a full LLMConfig (with api_key/api_base) in app's config by provider+model."""
+        full_config = getattr(app, '_config', None)
+        if full_config is None:
+            try:
+                from benchmark.config import load_config
+                full_config = load_config("config.yaml")
+            except Exception:
+                return None
+
+        # Check reviewer first
+        if full_config.reviewer.provider == provider and full_config.reviewer.model == model:
+            return full_config.reviewer
+
+        # Check models_to_test
+        for m in full_config.models_to_test:
+            if m.provider == provider and m.model == model:
+                return m
+
+        return None

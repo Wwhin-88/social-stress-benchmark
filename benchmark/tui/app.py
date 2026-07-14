@@ -12,13 +12,14 @@ Global keybindings (priority — work even while typing):
 
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 from typing import Any
 
 from textual.app import App, ComposeResult
 from textual.binding import Binding
 
-from benchmark.config import load_config
+from benchmark.config import Config, load_config
 from benchmark.tui.screens.chat import ChatScreen
 from benchmark.tui.screens.welcome import WelcomeScreen
 from benchmark.tui.widgets.dialog_model_selector import ModelSelectorDialog
@@ -40,9 +41,11 @@ class SSBApp(App[None]):
 
     def __init__(self) -> None:
         super().__init__()
-        # Session-level model overrides (set via Ctrl+M / Ctrl+H)
+        # Session-level model overrides (set via Ctrl+O / Ctrl+T)
         self.reviewer_model: str | None = None
         self.test_model: str | None = None
+        # Full Config object from config.yaml (for credential lookups)
+        self._config: Config | None = None
         # All available model options (populated on mount from config)
         self._model_options: list[tuple[str, str]] = []
 
@@ -74,7 +77,8 @@ class SSBApp(App[None]):
         """Populate model options from config.yaml (deduplicated)."""
         try:
             config = load_config("config.yaml")
-            seen: dict[str, str] = {}  # model_id → display_name
+            self._config = config
+            seen: dict[str, str] = {}
 
             for m in config.models_to_test:
                 key = f"{m.provider}/{m.model}"
@@ -145,13 +149,18 @@ class SSBApp(App[None]):
 
     def _refresh_chat_status(self) -> None:
         """Notify ChatScreen to refresh its status bar."""
-        # If ChatScreen is the top screen, call its refresh
         try:
             screen = self.screen
             if hasattr(screen, '_refresh_status'):
                 screen._refresh_status()
         except Exception:
             pass
+
+    async def _shutdown(self) -> None:
+        """Aggressively cancel all workers on Ctrl+C before shutdown."""
+        self.workers.cancel_all()
+        await asyncio.sleep(0.5)
+        await super()._shutdown()
 
 
 def run_tui() -> None:

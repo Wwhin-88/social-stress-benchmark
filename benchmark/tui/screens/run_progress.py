@@ -21,6 +21,7 @@ from textual.message import Message
 from textual.screen import Screen
 from textual.widgets import Button, Footer, Header, ProgressBar, RichLog, Static
 from textual.binding import Binding
+from textual.worker import get_current_worker
 
 from benchmark.config import load_config, LLMConfig
 from benchmark.profiles import PROFILES
@@ -113,9 +114,10 @@ class RunProgressScreen(Screen):
     def _run_benchmark(self) -> None:
         """Execute the full run plan in a background thread.
 
-        Uses ``self.call_from_thread()`` for UI updates so the screen
-        stays responsive.
+        Uses ``app.call_from_thread()`` for UI updates so the screen
+        stays responsive.  Checks ``worker.is_cancelled`` to stop on Ctrl+C.
         """
+        worker = get_current_worker()
         full_config = load_config("config.yaml")
         reviewer = self._run_config["reviewer"]
         output_dir = self._run_config.get("output_dir", "./results")
@@ -133,18 +135,22 @@ class RunProgressScreen(Screen):
                 f"  Total runs: {self._total_runs}\n"
             )
 
-        self.call_from_thread(_ui_ready)
+        self.app.call_from_thread(_ui_ready)
 
         if self._total_runs == 0:
-            self.call_from_thread(self._log, "[warning]No runs to execute.[/warning]")
-            self.call_from_thread(self._set_status, "Nothing to run")
-            self.call_from_thread(self._mark_finished)
+            self.app.call_from_thread(self._log, "[warning]No runs to execute.[/warning]")
+            self.app.call_from_thread(self._set_status, "Nothing to run")
+            self.app.call_from_thread(self._mark_finished)
             return
 
         for idx, (model_cfg, scenario_name, defender) in enumerate(plan):
+            if worker.is_cancelled:
+                self.app.call_from_thread(self._log, "[red]Cancelled by user[/red]")
+                self.app.call_from_thread(self._mark_finished)
+                return
             status = f"Running: {model_cfg.model} / {scenario_name} / {defender}"
-            self.call_from_thread(self._set_status, status)
-            self.call_from_thread(self._log, f"[bold]▶ {status}[/bold]")
+            self.app.call_from_thread(self._set_status, status)
+            self.app.call_from_thread(self._log, f"[bold]▶ {status}[/bold]")
 
             try:
                 scenario = load_scenario(scenario_name)
@@ -163,20 +169,20 @@ class RunProgressScreen(Screen):
                     if result.gate.passed
                     else "[red]FAIL ✗[/red]"
                 )
-                self.call_from_thread(
+                self.app.call_from_thread(
                     self._log,
                     f"  Score: [bold]{result.composite_score}[/bold]  "
                     f"Gate: {gate_str}",
                 )
             except Exception as exc:
                 logger.exception("Run failed for %s / %s / %s", model_cfg.model, scenario_name, defender)
-                self.call_from_thread(
+                self.app.call_from_thread(
                     self._log,
                     f"  [red]ERROR: {exc}[/red]",
                 )
 
             self._completed_runs = idx + 1
-            self.call_from_thread(self._set_progress, self._completed_runs)
+            self.app.call_from_thread(self._set_progress, self._completed_runs)
 
         # Save model summary once all defenders for this model are done
         if self._results:
@@ -186,7 +192,7 @@ class RunProgressScreen(Screen):
             except Exception as exc:
                 logger.warning("Could not save model summary: %s", exc)
 
-        self.call_from_thread(self._mark_finished)
+        self.app.call_from_thread(self._mark_finished)
 
     # ------------------------------------------------------------------
     # UI helpers (called from main thread via call_from_thread)

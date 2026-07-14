@@ -48,8 +48,8 @@ def call_llm(
     model: str,
     api_key: str,
     messages: list[dict[str, str]],
-    max_tokens: int = 65000,
-    temperature: float = 0.7,
+    max_tokens: int | None = None,
+    temperature: float | None = None,
     timeout: int = TIMEOUT,
     api_base: str | None = None,
 ) -> str:
@@ -59,8 +59,23 @@ def call_llm(
     Handles: timeout, auth errors, rate limits, network errors.
     timeout: seconds before retry (default TIMEOUT=120).
     api_base: optional custom endpoint (for local models, openrouter, etc.)
+    max_tokens / temperature: if None, use provider defaults.
     """
+    # Map "local" → "openai" — litellm has no "local" provider.
+    # Local servers (LM Studio, vLLM, Ollama) are OpenAI-compatible.
+    if provider and provider.lower() == "local":
+        provider = "openai"
+        if not api_key:
+            api_key = "not-needed"
+
     model_string = f"{provider}/{model}" if provider else model
+
+    # Build kwargs — only pass non-None overrides
+    kwargs: dict = {}
+    if max_tokens is not None:
+        kwargs["max_tokens"] = max_tokens
+    if temperature is not None:
+        kwargs["temperature"] = temperature
 
     last_error: Exception | None = None
 
@@ -70,16 +85,18 @@ def call_llm(
                 model=model_string,
                 api_key=api_key,
                 messages=messages,
-                max_tokens=max_tokens,
-                temperature=temperature,
                 timeout=timeout,
                 api_base=api_base or None,
+                **kwargs,
             )
             return response.choices[0].message.content or ""
 
         except Exception as e:
             last_error = e
             error_str = str(e).lower()
+            # Add api_base context for easier debugging
+            if api_base and "api_base" not in error_str:
+                error_str += f" [api_base={api_base}]"
 
             # Authentication error — no point retrying
             if any(kw in error_str for kw in ("auth", "api_key", "api key", "unauthorized", "403", "401")):

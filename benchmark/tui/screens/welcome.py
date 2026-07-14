@@ -492,7 +492,7 @@ class WelcomeScreen(Screen[None]):
         config_data = {
             "reviewer": reviewer_model,
             "models_to_test": test_models_yaml,
-            "scenarios": [],
+            "scenarios": self._detect_scenarios(),
             "defender_variants": ["weak", "normal", "aggressive"],
             "output": {"dir": "./results", "format": "json", "auto_save": True},
         }
@@ -527,3 +527,19 @@ class WelcomeScreen(Screen[None]):
         lines.append("[dim]API keys will be stored in .env[/dim]")
 
         self.query_one("#summary-container", Static).update("\n".join(lines))
+
+    # ------------------------------------------------------------------
+    # Helpers
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _detect_scenarios() -> list[str]:
+        """Auto-detect available scenario files in the scenarios/ directory."""
+        try:
+            from scenarios import list_scenarios
+            found = list_scenarios()
+            if found:
+                return found
+        except Exception:
+            pass
+        return ["smart_home_vendetta"]

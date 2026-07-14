@@ -33,6 +33,7 @@ from textual.message import Message
 from textual.screen import Screen
 from textual.suggester import SuggestFromList
 from textual.widgets import Header, RichLog, Static, TextArea
+from textual.worker import get_current_worker
 
 from benchmark import __version__ as benchmark_version
 from benchmark.repl import (
@@ -328,6 +329,7 @@ class ChatScreen(Screen[None]):
     @work(thread=True, exclusive=True)
     def _cmd_run(self, log: RichLog, args: list[str]) -> None:
         app = self.app
+        worker = get_current_worker()
         profile: str | None = None
         model: str | None = None
         scenario: str | None = None
@@ -372,6 +374,10 @@ class ChatScreen(Screen[None]):
             app.call_from_thread(log.write, "[green]Configuration valid.[/green]")
             return
 
+        if worker.is_cancelled:
+            app.call_from_thread(log.write, "[red]Cancelled by user[/red]")
+            return
+
         buf = io.StringIO()
         cap = RichConsole(file=buf, force_terminal=False, width=120)
         try:
@@ -396,6 +402,7 @@ class ChatScreen(Screen[None]):
     @work(thread=True, exclusive=True)
     def _cmd_sweep(self, log: RichLog, args: list[str]) -> None:
         app = self.app
+        worker = get_current_worker()
         config_path, models_str, defenders_str = "config.yaml", None, None
         dry_run, verbose = False, False
 
@@ -421,13 +428,41 @@ class ChatScreen(Screen[None]):
 
         from benchmark.config import LLMConfig
         if models_str:
-            cfg.models_to_test = [LLMConfig(provider="openai", model=m.strip(), api_key="") for m in models_str.split(",")]
+            # Load a fresh config to preserve original credentials
+            try:
+                from benchmark.config import load_config
+                orig_config = load_config(config_path)
+            except Exception:
+                orig_config = None
+
+            cfg.models_to_test = []
+            for name in [m.strip() for m in models_str.split(",")]:
+                found = None
+                if orig_config:
+                    for m in orig_config.models_to_test:
+                        if m.model == name:
+                            found = m
+                            break
+                    if found is None:
+                        parts = name.split("/", 1)
+                        if len(parts) == 2:
+                            for m in orig_config.models_to_test:
+                                if m.provider == parts[0] and m.model == parts[1]:
+                                    found = m
+                                    break
+                if found is None:
+                    found = LLMConfig(provider="openai", model=name, api_key="")
+                cfg.models_to_test.append(found)
         if defenders_str:
             cfg.defender_variants = [d.strip() for d in defenders_str.split(",")]
         if dry_run:
             app.call_from_thread(log.write, "[yellow]Dry-run mode.[/yellow]"); return
 
         app.call_from_thread(log.write, f"[dim]Sweep: {len(cfg.models_to_test)} models × {len(cfg.defender_variants)} defenders[/dim]")
+
+        if worker.is_cancelled:
+            app.call_from_thread(log.write, "[red]Cancelled by user[/red]")
+            return
 
         buf = io.StringIO()
         cap = RichConsole(file=buf, force_terminal=False, width=120)

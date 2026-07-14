@@ -183,8 +183,8 @@ def review_response(
             api_key=reviewer_config.api_key,
             api_base=reviewer_config.api_base or None,
             messages=messages,
-            max_tokens=65000,
-            temperature=0.0,  # Deterministic reviewer
+            max_tokens=reviewer_config.max_tokens,
+            temperature=reviewer_config.temperature,
         )
     except SkipModel:
         raise

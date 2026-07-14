@@ -16,6 +16,8 @@ class LLMConfig(BaseModel):
     model: str
     api_key: str = ""
     api_base: str = ""
+    max_tokens: int | None = None       # None = use provider default
+    temperature: float | None = None    # None = use provider default
 
 
 class OutputConfig(BaseModel):
