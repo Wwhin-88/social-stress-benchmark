@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 MAX_RETRIES = 3
-TIMEOUT = 120  # seconds — litellm takes timeout in seconds (60-90s for local models)
+TIMEOUT = 900  # 15 minutes — local models on low-perf hardware need more time (litellm takes seconds)
 BASE_DELAY = 1.0
 
 

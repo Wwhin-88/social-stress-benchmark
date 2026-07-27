@@ -10,6 +10,9 @@ build/
 .eggs/
 
 # Environment
+config.yaml
+.env
+.venv
 .env
 .venv
 venv/

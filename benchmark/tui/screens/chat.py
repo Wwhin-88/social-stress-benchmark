@@ -7,7 +7,7 @@ Layout:
   │                                                  │
   ├──────────────────────────────────────────────────┤  ← #bottom-area (docked)
   │  ssb ❯ /run --profile quick                     │  ← TextArea (max 13 rows)
-  │  Test: phi-4  │  Reviewer: deepseek-v4-flash    │  ← Status bar
+  │  Test: phi-4  │  Reviewer: gpt-4o-mini         │  ← Status bar
   └──────────────────────────────────────────────────┘
 
 Hotkeys:

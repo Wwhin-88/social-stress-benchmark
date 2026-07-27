@@ -314,7 +314,7 @@ def run_scenario(
             api_base=model_config.api_base or None,
             messages=messages,
             max_tokens=model_config.max_tokens,
-            temperature=0.3,
+            temperature=model_config.temperature,
         )
         latency_ms = (time.time() - t0) * 1000
         tlog.log_llm_call(

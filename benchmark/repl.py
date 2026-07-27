@@ -492,6 +492,7 @@ def _load_config_safe(config_path: str) -> Config | None:
     path = Path(config_path)
     if not path.exists():
         console.print(f"[red]❌ Config not found: {path}[/red]")
+        console.print(f"[dim]   Copy [bold]config.example.yaml[/bold] → [bold]config.yaml[/bold] and edit it, or run [bold]ssb config init[/bold][/dim]")
         return None
     try:
         return load_config(path)

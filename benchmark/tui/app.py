@@ -66,6 +66,9 @@ class SSBApp(App[None]):
             self._load_models_from_config()
             self.push_screen(ChatScreen())
         else:
+            # No config.yaml — launch first-run wizard
+            # User can use config.example.yaml as reference
+            self.push_screen(WelcomeScreen(), self._after_welcome)
             self.push_screen(WelcomeScreen(), self._after_welcome)
 
     def _after_welcome(self, _result: Any) -> None:

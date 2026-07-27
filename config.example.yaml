@@ -1,0 +1,26 @@
+reviewer:
+  provider: openai
+  model: gpt-4o-mini
+  api_key: ${REVIEWER_API_KEY}
+  api_base: ""
+
+models_to_test:
+  - provider: openai
+    model: gpt-4o
+    api_key: ${MODEL_API_KEY}
+    api_base: ""
+#   max_tokens: 2048    # optional — uncomment to override provider default
+#   temperature: 0.3     # optional — uncomment to override provider default
+
+scenarios:
+  - smart_home_vendetta
+
+defender_variants:
+  - weak
+  - normal
+  - aggressive
+
+output:
+  dir: ./results
+  format: json
+  auto_save: true

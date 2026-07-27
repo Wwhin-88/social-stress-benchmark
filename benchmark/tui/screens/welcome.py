@@ -5,6 +5,7 @@ Provides a three-step guided setup:
 2. Add one or more test models.
 3. Review and save config.yaml + .env.
 
+See config.example.yaml for reference — all options are documented there.
 Provider is a free-text input — supports any litellm-compatible provider.
 """
 
@@ -40,7 +41,7 @@ def _model_fields(
     prefix: str,
     provider_default: str = "openai",
     model_placeholder: str = "e.g. gpt-4o",
-    api_key_placeholder: str = "sk-…",
+    api_key_placeholder: str = "sk-...",
 ) -> list:
     """Return a list of widgets for a model input group (provider, name, key, base URL)."""
     base_placeholder = API_BASE_PLACEHOLDERS.get(provider_default, "(optional)")
@@ -48,7 +49,7 @@ def _model_fields(
         Label("Provider"),
         Input(
             id=f"{prefix}_provider",
-            placeholder="openai / deepseek / openrouter / local / …",
+            placeholder="openai / deepseek / openrouter / local / ...",
             value=provider_default,
         ),
         Label("Model name"),
