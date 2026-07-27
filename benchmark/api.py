@@ -76,11 +76,6 @@ def call_llm(
                 "  Ollama:     http://localhost:11434/v1\n"
                 "  vLLM:       http://localhost:8000/v1"
             )
-    # Local servers (LM Studio, vLLM, Ollama) are OpenAI-compatible.
-    if provider and provider.lower() == "local":
-        provider = "openai"
-        if not api_key:
-            api_key = "not-needed"
 
     model_string = f"{provider}/{model}" if provider else model
 

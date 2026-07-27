@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import re
 import time
 import traceback
 from datetime import datetime
@@ -39,6 +40,7 @@ def run_scenario(
     defender_variant: str,
     output_dir: str = "./results",
     run_id: str | None = None,
+    subtests: list[str] | None = None,
 ) -> RunResult:
     """Run a single scenario with one model + defender variant.
 
@@ -49,6 +51,12 @@ def run_scenario(
     4. Gate check + failure mode detection
     5. Composite score calculation
     6. Auto-save
+
+    Args:
+        subtests: Optional list of subtest names to run (e.g. ["subtest_1", "subtest_3"]).
+                  If None (default), ALL subtests are run.
+                  Skipped subtests produce empty objects that show
+                  "unscored/untested" in the template output.
     """
     if run_id is None:
         run_id = get_run_id()
@@ -73,77 +81,81 @@ def run_scenario(
     # Track whether all subtests completed without errors
     all_succeeded = True
 
+    # ── Determine which subtests to run ────────────────────────────────
+    _run_all = subtests is None
+
     # -------------------------------------------------------------------
     # Subtest 1: Freeform Dialogue (3 turns)
     # -------------------------------------------------------------------
     turns: list[Turn] = []
     defender_context = scenario.defender_variants.get(defender_variant, "")
 
-    for turn_def in scenario.subtests.subtest_1.turns:
-        prompt = turn_def.prompt
+    if _run_all or "subtest_1" in (subtests or []):
+        for turn_def in scenario.subtests.subtest_1.turns:
+            prompt = turn_def.prompt
 
-        # Inject defender variant context into turn 2
-        if turn_def.id == 2 and defender_context:
-            prompt = prompt + "\n\n" + defender_context
+            # Inject defender variant context into turn 2
+            if turn_def.id == 2 and defender_context:
+                prompt = prompt + "\n\n" + defender_context
 
-        system_message = {"role": "system", "content": scenario.system_prompt}
-        user_message = {"role": "user", "content": prompt}
-        messages = [system_message, user_message]
+            system_message = {"role": "system", "content": scenario.system_prompt}
+            user_message = {"role": "user", "content": prompt}
+            messages = [system_message, user_message]
 
-        t0 = time.time()
-        try:
-            response = call_llm(
-                provider=model_config.provider,
-                model=model_config.model,
-                api_key=model_config.api_key,
-                api_base=model_config.api_base or None,
-                messages=messages,
-                max_tokens=model_config.max_tokens,
-                temperature=model_config.temperature,
-            )
-            latency_ms = (time.time() - t0) * 1000
-            tlog.log_llm_call(
-                subtest="subtest_1",
-                turn=turn_def.id,
-                provider=model_config.provider,
-                model=model_config.model,
-                prompt_preview=prompt,
-                response_preview=response,
-                latency_ms=latency_ms,
-                status="success",
-            )
-        except SkipModel:
-            tlog.finish(status="failed")
-            raise
-        except LLMError as e:
-            latency_ms = (time.time() - t0) * 1000
-            all_succeeded = False
-            logger.error("Model call failed on turn %d: %s", turn_def.id, e)
-            response = f"[ERROR: {e}]"
-            tlog.log_llm_call(
-                subtest="subtest_1",
-                turn=turn_def.id,
-                provider=model_config.provider,
-                model=model_config.model,
-                prompt_preview=prompt,
-                response_preview=response,
-                latency_ms=latency_ms,
-                status="error",
-                error=str(e),
-            )
-            tlog.log_error(
-                context=f"subtest_1/turn_{turn_def.id}",
-                error_type="LLMError",
-                message=str(e),
-                traceback=traceback.format_exc(),
-            )
+            t0 = time.time()
+            try:
+                response = call_llm(
+                    provider=model_config.provider,
+                    model=model_config.model,
+                    api_key=model_config.api_key,
+                    api_base=model_config.api_base or None,
+                    messages=messages,
+                    max_tokens=model_config.max_tokens,
+                    temperature=model_config.temperature,
+                )
+                latency_ms = (time.time() - t0) * 1000
+                tlog.log_llm_call(
+                    subtest="subtest_1",
+                    turn=turn_def.id,
+                    provider=model_config.provider,
+                    model=model_config.model,
+                    prompt_preview=prompt,
+                    response_preview=response,
+                    latency_ms=latency_ms,
+                    status="success",
+                )
+            except SkipModel:
+                tlog.finish(status="failed")
+                raise
+            except LLMError as e:
+                latency_ms = (time.time() - t0) * 1000
+                all_succeeded = False
+                logger.error("Model call failed on turn %d: %s", turn_def.id, e)
+                response = f"[ERROR: {e}]"
+                tlog.log_llm_call(
+                    subtest="subtest_1",
+                    turn=turn_def.id,
+                    provider=model_config.provider,
+                    model=model_config.model,
+                    prompt_preview=prompt,
+                    response_preview=response,
+                    latency_ms=latency_ms,
+                    status="error",
+                    error=str(e),
+                )
+                tlog.log_error(
+                    context=f"subtest_1/turn_{turn_def.id}",
+                    error_type="LLMError",
+                    message=str(e),
+                    traceback=traceback.format_exc(),
+                )
 
-        turn_record = Turn(
-            id=turn_def.id,
-            prompt=prompt,
-            response=response,
-        )
-        turns.append(turn_record)
+            turn_record = Turn(
+                id=turn_def.id,
+                prompt=prompt,
+                response=response,
+            )
+            turns.append(turn_record)
 
     # Reviewer evaluation of subtest 1
     reviewer_scores = ReviewerScores()
@@ -206,86 +218,87 @@ def run_scenario(
     # -------------------------------------------------------------------
     choices: list[Choice] = []
 
-    for dp in scenario.subtests.subtest_2.decision_points:
-        # Build the prompt listing options
-        options_list = [
-            f"{key}: {opt.text}"
-            for key, opt in dp.options.items()
-        ]
-        options_text = "\n".join(options_list)
-        choice_prompt = f"{dp.prompt}\n\nOptions:\n{options_text}\n\nChoose A, B, or C. Respond with just the letter."
-        messages = [
-            {"role": "system", "content": scenario.system_prompt},
-            {"role": "user", "content": choice_prompt},
-        ]
+    if _run_all or "subtest_2" in (subtests or []):
+        for dp in scenario.subtests.subtest_2.decision_points:
+            # Build the prompt listing options
+            options_list = [
+                f"{key}: {opt.text}"
+                for key, opt in dp.options.items()
+            ]
+            options_text = "\n".join(options_list)
+            choice_prompt = f"{dp.prompt}\n\nOptions:\n{options_text}\n\nChoose A, B, or C. Respond with just the letter."
+            messages = [
+                {"role": "system", "content": scenario.system_prompt},
+                {"role": "user", "content": choice_prompt},
+            ]
 
-        t0 = time.time()
-        try:
-            response = call_llm(
-                provider=model_config.provider,
-                model=model_config.model,
-                api_key=model_config.api_key,
-                api_base=model_config.api_base or None,
-                messages=messages,
-                max_tokens=model_config.max_tokens,
-                temperature=model_config.temperature,
-            )
-            latency_ms = (time.time() - t0) * 1000
-            tlog.log_llm_call(
-                subtest="subtest_2",
-                turn=None,
-                provider=model_config.provider,
-                model=model_config.model,
-                prompt_preview=choice_prompt,
-                response_preview=response,
-                latency_ms=latency_ms,
-                status="success",
-            )
-        except SkipModel:
-            tlog.finish(status="failed")
-            raise
-        except LLMError as e:
-            latency_ms = (time.time() - t0) * 1000
-            all_succeeded = False
-            logger.error("Model call failed on DP %s: %s", dp.id, e)
-            tlog.log_llm_call(
-                subtest="subtest_2",
-                turn=None,
-                provider=model_config.provider,
-                model=model_config.model,
-                prompt_preview=choice_prompt,
-                response_preview=f"[ERROR: {e}]",
-                latency_ms=latency_ms,
-                status="error",
-                error=str(e),
-            )
-            tlog.log_error(
-                context=f"subtest_2/dp_{dp.id}",
-                error_type="LLMError",
-                message=str(e),
-                traceback=traceback.format_exc(),
-            )
-            choices.append(Choice(dp=dp.id, choice="?"))
+            t0 = time.time()
+            try:
+                response = call_llm(
+                    provider=model_config.provider,
+                    model=model_config.model,
+                    api_key=model_config.api_key,
+                    api_base=model_config.api_base or None,
+                    messages=messages,
+                    max_tokens=model_config.max_tokens,
+                    temperature=model_config.temperature,
+                )
+                latency_ms = (time.time() - t0) * 1000
+                tlog.log_llm_call(
+                    subtest="subtest_2",
+                    turn=None,
+                    provider=model_config.provider,
+                    model=model_config.model,
+                    prompt_preview=choice_prompt,
+                    response_preview=response,
+                    latency_ms=latency_ms,
+                    status="success",
+                )
+            except SkipModel:
+                tlog.finish(status="failed")
+                raise
+            except LLMError as e:
+                latency_ms = (time.time() - t0) * 1000
+                all_succeeded = False
+                logger.error("Model call failed on DP %s: %s", dp.id, e)
+                tlog.log_llm_call(
+                    subtest="subtest_2",
+                    turn=None,
+                    provider=model_config.provider,
+                    model=model_config.model,
+                    prompt_preview=choice_prompt,
+                    response_preview=f"[ERROR: {e}]",
+                    latency_ms=latency_ms,
+                    status="error",
+                    error=str(e),
+                )
+                tlog.log_error(
+                    context=f"subtest_2/dp_{dp.id}",
+                    error_type="LLMError",
+                    message=str(e),
+                    traceback=traceback.format_exc(),
+                )
+                choices.append(Choice(dp=dp.id, choice="?"))
+                tlog.log_choice(
+                    subtest="subtest_2",
+                    dp=dp.id,
+                    options=options_list,
+                    chosen="?",
+                    weights={},
+                )
+                continue
+
+            # Parse choice
+            selected = _parse_choice(response.strip(), list(dp.options.keys()))
+            weights = dict(dp.options.get(selected, {}).weights) if selected in dp.options else {}
+            choices.append(Choice(dp=dp.id, choice=selected, weights_applied=weights))
             tlog.log_choice(
                 subtest="subtest_2",
                 dp=dp.id,
                 options=options_list,
-                chosen="?",
-                weights={},
+                chosen=selected,
+                weights=weights,
             )
-            continue
-
-        # Parse choice
-        selected = _parse_choice(response.strip(), list(dp.options.keys()))
-        weights = dict(dp.options.get(selected, {}).weights) if selected in dp.options else {}
-        choices.append(Choice(dp=dp.id, choice=selected, weights_applied=weights))
-        tlog.log_choice(
-            subtest="subtest_2",
-            dp=dp.id,
-            options=options_list,
-            chosen=selected,
-            weights=weights,
-        )
 
     # Accumulate path weights
     path_weights = accumulate_weights(choices)
@@ -305,53 +318,56 @@ def run_scenario(
         {"role": "user", "content": rigid_prompt},
     ]
 
-    t0 = time.time()
-    try:
-        response = call_llm(
-            provider=model_config.provider,
-            model=model_config.model,
-            api_key=model_config.api_key,
-            api_base=model_config.api_base or None,
-            messages=messages,
-            max_tokens=model_config.max_tokens,
-            temperature=model_config.temperature,
-        )
-        latency_ms = (time.time() - t0) * 1000
-        tlog.log_llm_call(
-            subtest="subtest_3",
-            turn=None,
-            provider=model_config.provider,
-            model=model_config.model,
-            prompt_preview=rigid_prompt,
-            response_preview=response,
-            latency_ms=latency_ms,
-            status="success",
-        )
-    except SkipModel:
-        tlog.finish(status="failed")
-        raise
-    except LLMError as e:
-        latency_ms = (time.time() - t0) * 1000
-        all_succeeded = False
-        logger.error("Model call failed on subtest 3: %s", e)
+    if _run_all or "subtest_3" in (subtests or []):
+        t0 = time.time()
+        try:
+            response = call_llm(
+                provider=model_config.provider,
+                model=model_config.model,
+                api_key=model_config.api_key,
+                api_base=model_config.api_base or None,
+                messages=messages,
+                max_tokens=model_config.max_tokens,
+                temperature=model_config.temperature,
+            )
+            latency_ms = (time.time() - t0) * 1000
+            tlog.log_llm_call(
+                subtest="subtest_3",
+                turn=None,
+                provider=model_config.provider,
+                model=model_config.model,
+                prompt_preview=rigid_prompt,
+                response_preview=response,
+                latency_ms=latency_ms,
+                status="success",
+            )
+        except SkipModel:
+            tlog.finish(status="failed")
+            raise
+        except LLMError as e:
+            latency_ms = (time.time() - t0) * 1000
+            all_succeeded = False
+            logger.error("Model call failed on subtest 3: %s", e)
+            response = "?"
+            tlog.log_llm_call(
+                subtest="subtest_3",
+                turn=None,
+                provider=model_config.provider,
+                model=model_config.model,
+                prompt_preview=rigid_prompt,
+                response_preview=f"[ERROR: {e}]",
+                latency_ms=latency_ms,
+                status="error",
+                error=str(e),
+            )
+            tlog.log_error(
+                context="subtest_3",
+                error_type="LLMError",
+                message=str(e),
+                traceback=traceback.format_exc(),
+            )
+    else:
         response = "?"
-        tlog.log_llm_call(
-            subtest="subtest_3",
-            turn=None,
-            provider=model_config.provider,
-            model=model_config.model,
-            prompt_preview=rigid_prompt,
-            response_preview=f"[ERROR: {e}]",
-            latency_ms=latency_ms,
-            status="error",
-            error=str(e),
-        )
-        tlog.log_error(
-            context="subtest_3",
-            error_type="LLMError",
-            message=str(e),
-            traceback=traceback.format_exc(),
-        )
 
     final_choice = _parse_choice(response.strip(), list(scenario.subtests.subtest_3.options.keys()))
     final_weights = (
@@ -413,6 +429,8 @@ def run_scenario(
     tlog.finish(status=status)
 
     return result
+
+
 def _parse_choice(response: str, valid_keys: list[str]) -> str:
     """Parse the model's choice from its response.
 
@@ -429,9 +447,9 @@ def _parse_choice(response: str, valid_keys: list[str]) -> str:
         if clean.startswith(key.upper()):
             return key
 
-    # Contains match
+    # Contains match (word-boundary)
     for key in valid_keys:
-        if key.upper() in clean:
+        if re.search(rf'\b{re.escape(key)}\b', clean, re.IGNORECASE):
             return key
 
     logger.warning("Could not parse choice from: %s (valid: %s)", response, valid_keys)

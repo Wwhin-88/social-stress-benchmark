@@ -38,9 +38,13 @@ class BenchmarkEngine:
         print("\n\n⚠️  Benchmark interrupted. Saving partial results...")
         self._abort = True
 
-    def run(self) -> list[RunResult]:
-        """Execute the full benchmark."""
-        print_header(f"Social Stress Benchmark — Run {self.run_id}")
+    def run(self, subtests: list[str] | None = None) -> list[RunResult]:
+        """Execute the full benchmark.
+
+        Args:
+            subtests: Optional list of subtest names to run (e.g. ["subtest_1", "subtest_3"]).
+                      If None (default), ALL subtests are run.
+        """
 
         model_count = len(self.config.models_to_test)
         scenario_count = len(self.config.scenarios)
@@ -99,13 +103,11 @@ class BenchmarkEngine:
                             defender_variant=defender,
                             output_dir=self.config.output.dir,
                             run_id=self.run_id,
+                            subtests=subtests,
                         )
                     except SkipModel as e:
                         logger.error("Skipping model %s: %s", model_label, e)
                         break  # Skip remaining defenders for this model
-                    except LLMError as e:
-                        logger.error("Skipping defender %s for %s: %s", defender, model_label, e)
-                        continue
                     except Exception as e:
                         logger.error(
                             "Unexpected error for %s/%s/%s: %s",

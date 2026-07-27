@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 import logging
+import os
+import tempfile
 from pathlib import Path
 
 from benchmark.models import RunResult, GateResult
@@ -23,7 +25,7 @@ def _gate_str(gate: GateResult) -> str:
 def print_run_result(result: RunResult) -> None:
     """Print a single run result as a Rich panel."""
     gate_formatted = _gate_str(result.gate)
-    failure_modes = result.failure_modes.detected if result.failure_modes else []
+    failure_modes = result.failure_modes.detected
     failure_str = ", ".join(failure_modes) if failure_modes else "[dim]none[/dim]"
 
     content = (
@@ -58,15 +60,17 @@ def write_json_report(results: list[RunResult], output_path: str | Path) -> None
     """Write a comprehensive JSON report for all runs."""
     report = {
         "benchmark": "Social Stress Benchmark",
-        "version": "1.2.4",
+        "version": "1.3.0",
         "runs": [r.to_template_dict() for r in results],
     }
 
     path = Path(output_path)
     path.parent.mkdir(parents=True, exist_ok=True)
 
-    with open(path, "w", encoding="utf-8") as f:
+    tmp_path = path.parent / f".{path.name}.tmp"
+    with open(tmp_path, "w", encoding="utf-8") as f:
         json.dump(report, f, indent=2, ensure_ascii=False)
+    os.replace(tmp_path, path)
 
     logger.info("Report written to %s", path)
     console.print(f"\n[bold]Report:[/bold] {path}")

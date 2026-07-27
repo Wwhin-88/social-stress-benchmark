@@ -246,14 +246,13 @@ class RunResult(BaseModel):
             "composite_score": self.composite_score,
             "failure_modes": {
                 "detected": self.failure_modes.detected,
-                "flags": self.failure_modes.flags,
                 "flags": self.failure_modes.flags if self.failure_modes else [],
             },
         }
 
         return {
             "benchmark": "Social Stress Benchmark",
-            "version": "1.2.4",
+            "version": "1.3.0",
             "run_id": self.run_id,
             "model": self.model,
             "scenario": self.scenario,

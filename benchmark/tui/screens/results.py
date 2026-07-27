@@ -213,6 +213,10 @@ class ResultsScreen(Screen):
     @on(DataTable.RowHighlighted)
     def _on_row_selected(self, event: DataTable.RowSelected | DataTable.RowHighlighted) -> None:
         """Show summary for the highlighted/selected row."""
+        if event.row_key.value is None:
+            return
+        self._update_detail(event.row_key)
+        """Show summary for the highlighted/selected row."""
         self._update_detail(event.row_key)
 
     def _update_detail(self, row_key) -> None:
@@ -221,6 +225,8 @@ class ResultsScreen(Screen):
         table = self.query_one("#results-table", DataTable)
 
         try:
+            row_index = table.get_row_index(row_key)
+        except (KeyError, IndexError):
             row_index = table.rows[row_key]
         except (KeyError, IndexError):
             summary.update("")

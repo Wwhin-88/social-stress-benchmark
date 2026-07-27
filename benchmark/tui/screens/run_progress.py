@@ -121,8 +121,8 @@ class RunProgressScreen(Screen):
         full_config = load_config("config.yaml")
         reviewer = self._run_config["reviewer"]
         output_dir = self._run_config.get("output_dir", "./results")
+        subtests = self._run_config.get("subtests", None)
         self._run_id = get_run_id()
-
         plan = self._build_run_plan(full_config)
         self._total_runs = len(plan)
 
@@ -161,6 +161,7 @@ class RunProgressScreen(Screen):
                     defender_variant=defender,
                     output_dir=output_dir,
                     run_id=self._run_id,
+                    subtests=subtests,
                 )
                 self._results.append(result)
 
