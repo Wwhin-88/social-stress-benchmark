@@ -22,6 +22,7 @@ from textual.screen import Screen
 from textual.widgets import Button, Footer, Header, ProgressBar, RichLog, Static
 from textual.binding import Binding
 from textual.worker import get_current_worker
+from benchmark.tui.screens.chat import CopyOnSelectLog
 
 from benchmark.config import load_config, LLMConfig
 from benchmark.profiles import PROFILES
@@ -67,7 +68,7 @@ class RunProgressScreen(Screen):
         with Vertical(id="run-progress"):
             yield Static("Preparing run…", id="progress-header")
             yield ProgressBar(id="progress-bar", total=100, show_eta=False)
-            yield RichLog(id="progress-log", highlight=True, markup=True, max_lines=10_000)
+            yield CopyOnSelectLog(id="progress-log", highlight=True, markup=True, max_lines=10_000)
             yield Button("View Details", id="view-details-button", variant="primary", disabled=True)
         yield Footer()
 
@@ -123,6 +124,13 @@ class RunProgressScreen(Screen):
         output_dir = self._run_config.get("output_dir", "./results")
         subtests = self._run_config.get("subtests", None)
         self._run_id = get_run_id()
+        # Log the output directory so user can verify
+        from pathlib import Path as _Path
+        resolved_dir = _Path(output_dir).resolve()
+        self.app.call_from_thread(
+            self._log,
+            f"[dim]Output: {resolved_dir}[/dim]",
+        )
         plan = self._build_run_plan(full_config)
         self._total_runs = len(plan)
 
@@ -181,6 +189,13 @@ class RunProgressScreen(Screen):
                     self._log,
                     f"  [red]ERROR: {exc}[/red]",
                 )
+                # Show full traceback in the log for debugging
+                import traceback
+                tb_str = traceback.format_exc()
+                self.app.call_from_thread(
+                    self._log,
+                    f"  [dim]{tb_str[-500:]}[/dim]",
+                )
 
             self._completed_runs = idx + 1
             self.app.call_from_thread(self._set_progress, self._completed_runs)
@@ -189,9 +204,17 @@ class RunProgressScreen(Screen):
         if self._results:
             model_name = plan[0][0].model
             try:
-                save_model_summary(self._results, output_dir, model_name)
+                summary_path = save_model_summary(self._results, output_dir, model_name)
+                self.app.call_from_thread(
+                    self._log,
+                    f"[dim]Saved summary: {summary_path}[/dim]",
+                )
             except Exception as exc:
                 logger.warning("Could not save model summary: %s", exc)
+                self.app.call_from_thread(
+                    self._log,
+                    f"[red]Could not save summary: {exc}[/red]",
+                )
 
         self.app.call_from_thread(self._mark_finished)
 

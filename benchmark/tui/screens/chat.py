@@ -136,6 +136,47 @@ class ChatInput(TextArea):
             self.suggestion = ""
 
 
+# ── CopyOnSelectLog: RichLog that auto-copies selected text on mouse-up ──
+
+class CopyOnSelectLog(RichLog):
+    """RichLog that auto-copies selected text on mouse release after drag.
+
+    On macOS, simulates Cmd+C via osascript to copy terminal-selected text.
+    The 50 ms timer delay ensures the terminal processes the mouse release
+    before the copy keystroke is dispatched.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._mouse_down_pos: tuple[int, int] | None = None
+
+    def on_mouse_down(self, event: events.MouseDown) -> None:
+        self._mouse_down_pos = (event.x, event.y)
+
+    def on_click(self, event: events.Click) -> None:
+        if self._mouse_down_pos is not None:
+            dx = abs(event.x - self._mouse_down_pos[0])
+            dy = abs(event.y - self._mouse_down_pos[1])
+            if dx > 3 or dy > 3:
+                self.set_timer(0.05, self._copy_selection)
+            self._mouse_down_pos = None
+
+    @staticmethod
+    def _copy_selection() -> None:
+        import subprocess
+        import sys
+        try:
+            if sys.platform == "darwin":
+                subprocess.run(
+                    ["osascript", "-e",
+                     'tell application "System Events" to keystroke "c" using command down'],
+                    check=False, timeout=1,
+                )
+        except Exception:
+            pass
+
+
+
 # ── ChatScreen ─────────────────────────────────────────────────────────
 
 class ChatScreen(Screen[None]):
@@ -192,7 +233,7 @@ class ChatScreen(Screen[None]):
 
     def compose(self) -> ComposeResult:
         yield Header()
-        yield RichLog(
+        yield CopyOnSelectLog(
             id="chat-log",
             markup=True,
             highlight=True,

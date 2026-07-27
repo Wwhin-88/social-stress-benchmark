@@ -16,13 +16,14 @@ Models are selected globally via Ctrl+M (reviewer) and Ctrl+H (test).
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from textual import on
 from textual.app import ComposeResult
 from textual.containers import Container, Grid
 from textual.screen import Screen
 from textual.widgets import Button, Footer, Header, Label, Static
 from textual.binding import Binding
-
 from benchmark.config import LLMConfig
 from benchmark.profiles import profile_names
 from scenarios import list_scenarios
@@ -31,6 +32,15 @@ from benchmark.tui.widgets.three_column_selector import ThreeColumnSelector
 
 class RunConfigScreen(Screen):
     """Main run configuration screen where users set up a benchmark run."""
+
+    @staticmethod
+    def _project_root() -> Path:
+        """Resolve the project root from this module's file location."""
+        this_file = Path(__file__).resolve()
+        root = this_file.parent.parent.parent.parent
+        if (root / "config.yaml").exists() or (root / "config.example.yaml").exists():
+            return root
+        return Path.cwd()
 
     BINDINGS = [
         Binding("escape", "app.pop_screen", "Back to menu", show=True),
@@ -169,7 +179,7 @@ class RunConfigScreen(Screen):
             "profile": cfg["profile"],
             "scenarios": cfg["scenarios"],
             "subtests": cfg["subtests"],
-            "output_dir": "./results",
+            "output_dir": str(RunConfigScreen._project_root() / "results"),
         }
 
         # Lazy import to avoid circular dependency at module level

@@ -46,17 +46,26 @@ class SSBApp(App[None]):
     def __init__(self) -> None:
         # Suppress Python logging spilling into Textual TUI
         # (logging.basicConfig in cli.py installed a StreamHandler at import time)
+        # Instead of clearing ALL handlers (which hides errors), replace the
+        # root handler with a stderr fallback so save/error logs are visible.
+        import sys
         _root = logging.getLogger()
-        _root.handlers.clear()
+        for h in list(_root.handlers):
+            _root.removeHandler(h)
+        _fallback = logging.StreamHandler(sys.stderr)
+        _fallback.setLevel(logging.WARNING)
+        _fallback.setFormatter(logging.Formatter(
+            "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+            datefmt="%H:%M:%S",
+        ))
+        _root.addHandler(_fallback)
+        _root.setLevel(logging.WARNING)
         # Also suppress litellm's own noisy INFO logging
         _lite = logging.getLogger("LiteLLM")
         _lite.handlers.clear()
         _lite.addHandler(logging.NullHandler())
         _lite.setLevel(logging.WARNING)
 
-        super().__init__()
-
-        super().__init__()
         super().__init__()
         # Session-level model overrides (set via Ctrl+O / Ctrl+T)
         self.reviewer_model: str | None = None

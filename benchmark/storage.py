@@ -23,14 +23,19 @@ def save_run_result(result: RunResult, output_dir: str | Path) -> Path:
     """Save a single run result to:
     output_dir/run_<timestamp>/<model>/<defender>.json
     """
-    output_path = Path(output_dir)
+    output_path = Path(output_dir).resolve()
     run_dir = _ensure_dir(output_path / f"run_{result.run_id}")
     model_dir = _ensure_dir(run_dir / result.model)
     file_path = model_dir / f"{result.defender}.json"
 
     tmp_path = file_path.parent / f".{file_path.name}.tmp"
+    try:
+        serialized = json.dumps(result.to_template_dict(), indent=2, ensure_ascii=False)
+    except Exception:
+        # Fallback: use Pydantic's native JSON dump
+        serialized = result.model_dump_json(indent=2, exclude_none=True)
     with open(tmp_path, "w", encoding="utf-8") as f:
-        f.write(json.dumps(result.to_template_dict(), indent=2, ensure_ascii=False))
+        f.write(serialized)
     os.replace(tmp_path, file_path)
 
     logger.info("Saved result: %s", file_path)
@@ -39,20 +44,31 @@ def save_run_result(result: RunResult, output_dir: str | Path) -> Path:
 
 def save_model_summary(results: list[RunResult], output_dir: str | Path, model_name: str) -> Path:
     """Save a summary JSON for all defenders of one model."""
-    output_path = Path(output_dir)
+    output_path = Path(output_dir).resolve()
     run_id = results[0].run_id if results else datetime.now().strftime("%Y%m%d_%H%M%S")
     run_dir = _ensure_dir(output_path / f"run_{run_id}")
     model_dir = _ensure_dir(run_dir / model_name)
     file_path = model_dir / "summary.json"
 
-    data = {
-        "run_id": run_id,
-        "model": model_name,
-        "scenario": results[0].scenario if results else "",
-        "defenders": {
-            r.defender: r.to_template_dict() for r in results
-        },
-    }
+    try:
+        data = {
+            "run_id": run_id,
+            "model": model_name,
+            "scenario": results[0].scenario if results else "",
+            "defenders": {
+                r.defender: r.to_template_dict() for r in results
+            },
+        }
+    except Exception:
+        # Fallback: use Pydantic's native serialization
+        data = {
+            "run_id": run_id,
+            "model": model_name,
+            "scenario": results[0].scenario if results else "",
+            "defenders": {
+                r.defender: json.loads(r.model_dump_json(exclude_none=True)) for r in results
+            },
+        }
 
     tmp_path = file_path.parent / f".{file_path.name}.tmp"
     with open(tmp_path, "w", encoding="utf-8") as f:

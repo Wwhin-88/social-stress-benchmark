@@ -10,14 +10,23 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from textual import on
+from textual import events, on
 from textual.app import ComposeResult
 from textual.containers import Vertical
 from textual.screen import Screen
 from textual.widgets import DataTable, Footer, Header, Label, Static
 from textual.binding import Binding
 
-RESULTS_DIR = Path("./results")
+def _resolve_results_dir() -> Path:
+    """Resolve the results directory relative to the project root."""
+    this_file = Path(__file__).resolve()
+    root = this_file.parent.parent.parent.parent
+    if (root / "config.yaml").exists() or (root / "config.example.yaml").exists():
+        return root / "results"
+    return Path.cwd() / "results"
+
+
+RESULTS_DIR: Path = _resolve_results_dir()
 
 
 def _load_run_metadata(run_dir: Path) -> list[dict]:
@@ -110,6 +119,47 @@ def _load_raw_result(run_dir: Path, model: str, defender: str) -> dict | None:
     return None
 
 
+# ── CopyOnSelectStatic: Static that auto-copies selected text on mouse-up ──
+
+class CopyOnSelectStatic(Static):
+    """Static widget that auto-copies selected text on mouse release after drag.
+
+    On macOS, simulates Cmd+C via osascript to copy terminal-selected text.
+    The 50 ms timer delay ensures the terminal processes the mouse release
+    before the copy keystroke is dispatched.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._mouse_down_pos: tuple[int, int] | None = None
+
+    def on_mouse_down(self, event: events.MouseDown) -> None:
+        self._mouse_down_pos = (event.x, event.y)
+
+    def on_click(self, event: events.Click) -> None:
+        if self._mouse_down_pos is not None:
+            dx = abs(event.x - self._mouse_down_pos[0])
+            dy = abs(event.y - self._mouse_down_pos[1])
+            if dx > 3 or dy > 3:
+                self.set_timer(0.05, self._copy_selection)
+            self._mouse_down_pos = None
+
+    @staticmethod
+    def _copy_selection() -> None:
+        import subprocess
+        import sys
+        try:
+            if sys.platform == "darwin":
+                subprocess.run(
+                    ["osascript", "-e",
+                     'tell application "System Events" to keystroke "c" using command down'],
+                    check=False, timeout=1,
+                )
+        except Exception:
+            pass
+
+
+
 class ResultsScreen(Screen):
     """Display and inspect previous benchmark runs."""
 
@@ -130,7 +180,7 @@ class ResultsScreen(Screen):
         with Vertical(id="results-screen"):
             yield Label("Previous Benchmark Runs", id="results-header")
             yield DataTable(id="results-table")
-            yield Static("", id="results-summary")
+            yield CopyOnSelectStatic("", id="results-summary")
         yield Footer()
 
     def on_mount(self) -> None:
@@ -138,7 +188,7 @@ class ResultsScreen(Screen):
         table = self.query_one("#results-table", DataTable)
         table.cursor_type = "row"
 
-        results_dir = Path("./results")
+        results_dir = RESULTS_DIR
         if not results_dir.exists():
             table.show_cursor = False
             self.query_one("#results-header", Label).update(
@@ -265,7 +315,7 @@ class ResultsScreen(Screen):
             return
 
         run_info = self._runs[cursor.row]
-        run_dir = Path("./results") / f"run_{run_info['run_id']}"
+        run_dir = RESULTS_DIR / f"run_{run_info['run_id']}"
 
         # Load the raw report.json if it exists, otherwise show first result
         raw: dict | None = None
