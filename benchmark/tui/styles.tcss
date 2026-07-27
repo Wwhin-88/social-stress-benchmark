@@ -335,6 +335,51 @@ AddModelDialog #error-label {
     margin-top: 1;
 }
 
+/* Delete model dialog */
+DeleteModelDialog > #dialog {
+    border: thick $accent;
+    background: $surface;
+    width: 48;
+    padding: 1 2;
+}
+
+DeleteModelDialog #title {
+    text-style: bold;
+}
+
+DeleteModelDialog #model-hint {
+    margin-bottom: 1;
+    color: $text-muted;
+}
+
+DeleteModelDialog OptionList {
+    height: 1fr;
+    border: none;
+}
+
+DeleteModelDialog OptionList > .option-list--option-highlighted {
+    background: $accent;
+    color: $text;
+    text-style: bold;
+}
+
+DeleteModelDialog #confirm-label {
+    margin-bottom: 1;
+}
+
+DeleteModelDialog #confirm-warning {
+    color: $text-muted;
+    margin-bottom: 1;
+}
+
+DeleteModelDialog #error-label {
+    color: $error;
+    text-style: bold;
+    margin-top: 1;
+    text-align: center;
+    width: 100%;
+}
+
 
 /* Shortcut overlay dialog */
 ShortcutOverlay > #dialog {

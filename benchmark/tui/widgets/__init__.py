@@ -5,11 +5,13 @@ from benchmark.tui.widgets.three_column_selector import ThreeColumnSelector
 from benchmark.tui.widgets.dialog_model_selector import ModelSelectorDialog
 from benchmark.tui.widgets.dialog_shortcuts import ShortcutOverlay
 from benchmark.tui.widgets.dialog_add_model import AddModelDialog
+from benchmark.tui.widgets.dialog_delete_model import DeleteModelDialog
 
 __all__ = [
     "ColumnView",
     "ThreeColumnSelector",
     "ModelSelectorDialog",
     "AddModelDialog",
+    "DeleteModelDialog",
     "ShortcutOverlay",
 ]

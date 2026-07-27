@@ -69,9 +69,10 @@ class AddModelDialog(ModalScreen[dict[str, str] | None]):
     }
     """
 
-    def __init__(self, title: str = "Add Model") -> None:
+    def __init__(self, title: str = "Add Model", initial: dict[str, str] | None = None) -> None:
         super().__init__()
         self._dialog_title = title
+        self._initial = initial
 
     def compose(self) -> ComposeResult:
         with Vertical(id="dialog"):
@@ -110,6 +111,19 @@ class AddModelDialog(ModalScreen[dict[str, str] | None]):
 
     def on_mount(self) -> None:
         """Focus the provider input and set initial field visibility."""
+        if self._initial:
+            self.query_one("#provider", Input).value = self._initial.get("provider", "")
+            self.query_one("#model", Input).value = self._initial.get("model", "")
+            self.query_one("#api_key", Input).value = self._initial.get("api_key", "")
+            self.query_one("#api_base", Input).value = self._initial.get("api_base", "")
+            # Trigger visibility update for api_key field
+            provider_val = self._initial.get("provider", "").strip().lower()
+            if provider_val == "local":
+                for field_id in ("#api_key_label", "#api_key"):
+                    try:
+                        self.query_one(field_id).display = False
+                    except Exception:
+                        pass
         self.query_one("#provider", Input).focus()
 
     # ------------------------------------------------------------------

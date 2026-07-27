@@ -47,6 +47,8 @@ class ModelSelectorDialog(ModalScreen[str | None]):
             yield Label(self._dialog_title, id="title")
             option_list = OptionList(id="model-list")
             option_list.add_option(Option("➕ Add model", id="__add_model__"))
+            option_list.add_option(Option("🗑 Delete model", id="__delete_model__"))
+            option_list.add_option(Option("✏️ Update model", id="__update_model__") )
             option_list.add_option(None)  # separator
             for display_name, model_id in self._models:
                 option_list.add_option(Option(display_name, id=model_id))

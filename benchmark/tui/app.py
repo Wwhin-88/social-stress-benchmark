@@ -26,6 +26,8 @@ from benchmark.tui.screens.chat import ChatScreen
 from benchmark.tui.screens.welcome import WelcomeScreen
 from benchmark.tui.widgets.dialog_model_selector import ModelSelectorDialog
 from benchmark.tui.widgets.dialog_add_model import AddModelDialog
+from benchmark.tui.widgets.dialog_delete_model import DeleteModelDialog
+from benchmark.tui.widgets.dialog_shortcuts import ShortcutOverlay
 
 
 class SSBApp(App[None]):
@@ -160,6 +162,56 @@ class SSBApp(App[None]):
             f"Model [bold]{model['provider']}/{model['model']}[/bold] added"
         )
 
+    def _delete_model_from_config(self, model_id: str) -> bool:
+        """Remove a model from config.yaml.
+
+        Args:
+            model_id: provider/model string (e.g. "openai/gpt-4o").
+
+        Returns:
+            True if model was removed or was not found, False on error.
+        """
+        config_path = Path("config.yaml")
+        if not config_path.exists():
+            self.notify("config.yaml not found", severity="error")
+            return False
+
+        import yaml as _yaml
+
+        with open(config_path, "r", encoding="utf-8") as f:
+            raw = _yaml.safe_load(f) or {}
+
+        # Determine the reviewer key from config
+        reviewer = raw.get("reviewer", {})
+        reviewer_key = (
+            f"{reviewer.get('provider', '')}/{reviewer.get('model', '')}"
+        )
+
+        # Block reviewer deletion
+        if model_id == reviewer_key:
+            self.notify(
+                "Cannot delete reviewer — use Ctrl+O to select a different one",
+                severity="error",
+            )
+            return False
+
+        # Remove from models_to_test
+        models = raw.get("models_to_test", [])
+        raw["models_to_test"] = [
+            m
+            for m in models
+            if f"{m.get('provider', '')}/{m.get('model', '')}" != model_id
+        ]
+
+        with open(config_path, "w", encoding="utf-8") as f:
+            _yaml.dump(raw, f, default_flow_style=False, sort_keys=False)
+
+        self.notify(f"Model [bold]{model_id}[/bold] removed")
+        return True
+
+    # ------------------------------------------------------------------
+    # Helpers: open model selector with add-model support
+    # ------------------------------------------------------------------
     # ------------------------------------------------------------------
     # Helpers: open model selector with add-model support
     # ------------------------------------------------------------------
@@ -167,7 +219,7 @@ class SSBApp(App[None]):
     def _open_model_selector(
         self, title: str, on_pick: Any, target: str
     ) -> None:
-        """Open ModelSelectorDialog and handle add-model flow."""
+        """Open ModelSelectorDialog and handle add/delete model flows."""
 
         def _on_selected(model_id: str | None) -> None:
             if model_id == "__add_model__":
@@ -177,9 +229,47 @@ class SSBApp(App[None]):
                         result, title, on_pick, target
                     ),
                 )
+            elif model_id == "__delete_model__":
+                self.push_screen(
+                    DeleteModelDialog(
+                        self._model_options,
+                        self.reviewer_model or "",
+                    ),
+                    lambda result: self._delete_model_and_reopen(
+                        result, title, on_pick, target
+                    ),
+                )
+            elif model_id == "__update_model__":
+                # Re-open selector for picking which model to update
+                def _pick_for_update(picked_id: str | None) -> None:
+                    if picked_id is None:
+                        self._open_model_selector(title, on_pick, target)
+                        return
+                    if picked_id in ("__add_model__", "__delete_model__", "__update_model__"):
+                        self.notify("Please select a model to update", severity="warning")
+                        self.push_screen(
+                            ModelSelectorDialog("Select model to update", self._model_options),
+                            _pick_for_update,
+                        )
+                        return
+                    update_target = "reviewer" if picked_id.startswith("★ ") else "test"
+                    initial = self._lookup_model_config(picked_id, update_target)
+                    if initial is None:
+                        self.notify("Model not found in config", severity="error")
+                        self._open_model_selector(title, on_pick, target)
+                        return
+                    self.push_screen(
+                        AddModelDialog(title="Update Model", initial=initial),
+                        lambda result: self._handle_update_and_reopen(
+                            result, picked_id, update_target, title, on_pick, target
+                        ),
+                    )
+                self.push_screen(
+                    ModelSelectorDialog("Select model to update", self._model_options),
+                    _pick_for_update,
+                )
             elif model_id:
                 on_pick(model_id)
-
         self.push_screen(
             ModelSelectorDialog(title, self._model_options),
             _on_selected,
@@ -198,6 +288,118 @@ class SSBApp(App[None]):
             self._load_models_from_config()
 
         # Re-open model selector (even if user cancelled add-model)
+        self._open_model_selector(title, on_pick, target)
+
+    def _delete_model_and_reopen(
+        self,
+        result: str | None,
+        title: str,
+        on_pick: Any,
+        target: str,
+    ) -> None:
+        """Handle DeleteModelDialog result — delete then re-open selector."""
+        if result is not None:
+            self._delete_model_from_config(result)
+            self._load_models_from_config()
+
+        # Re-open model selector (even if user cancelled deletion)
+        self._open_model_selector(title, on_pick, target)
+    def _lookup_model_config(
+        self, model_id: str, target: str
+    ) -> dict[str, str] | None:
+        """Look up a model's raw config from config.yaml (preserving env var refs)."""
+        config_path = Path("config.yaml")
+        if not config_path.exists():
+            return None
+
+        import yaml as _yaml
+
+        with open(config_path, "r", encoding="utf-8") as f:
+            raw = _yaml.safe_load(f) or {}
+
+        clean_id = model_id.lstrip("★ ")
+
+        if target == "reviewer":
+            r = raw.get("reviewer", {})
+            if isinstance(r, dict) and f"{r.get('provider', '')}/{r.get('model', '')}" == clean_id:
+                return {
+                    "provider": str(r.get("provider", "")),
+                    "model": str(r.get("model", "")),
+                    "api_key": str(r.get("api_key", "")),
+                    "api_base": str(r.get("api_base", "")),
+                }
+        elif target == "test":
+            for m in raw.get("models_to_test", []):
+                if isinstance(m, dict) and f"{m.get('provider', '')}/{m.get('model', '')}" == clean_id:
+                    return {
+                        "provider": str(m.get("provider", "")),
+                        "model": str(m.get("model", "")),
+                        "api_key": str(m.get("api_key", "")),
+                        "api_base": str(m.get("api_base", "")),
+                    }
+
+        return None
+
+    def _update_model_in_config(
+        self, model: dict[str, str], old_key: str, target: str
+    ) -> None:
+        """Update an existing model in config.yaml (replace, no duplicates)."""
+        config_path = Path("config.yaml")
+        if not config_path.exists():
+            self.notify("config.yaml not found", severity="error")
+            return
+
+        import yaml as _yaml
+
+        with open(config_path, "r", encoding="utf-8") as f:
+            raw = _yaml.safe_load(f) or {}
+
+        old_key = old_key.lstrip("★ ")
+
+        new_entry: dict[str, str] = {
+            "provider": model["provider"],
+            "model": model["model"],
+            "api_key": model["api_key"],
+        }
+        if model.get("api_base"):
+            new_entry["api_base"] = model["api_base"]
+
+        if target == "reviewer":
+            raw["reviewer"] = new_entry
+        elif target == "test":
+            models = raw.get("models_to_test", [])
+            found = False
+            for i, m in enumerate(models):
+                if isinstance(m, dict) and f"{m.get('provider', '')}/{m.get('model', '')}" == old_key:
+                    models[i] = new_entry
+                    found = True
+                    break
+            if not found:
+                models.append(new_entry)
+            raw["models_to_test"] = models
+
+        with open(config_path, "w", encoding="utf-8") as f:
+            _yaml.dump(raw, f, default_flow_style=False, sort_keys=False)
+
+        self.notify(
+            f"Model [bold]{model['provider']}/{model['model']}[/bold] updated"
+        )
+
+    def _handle_update_and_reopen(
+        self,
+        result: dict[str, str] | None,
+        old_model_id: str,
+        update_target: str,
+        title: str,
+        on_pick: Any,
+        target: str,
+    ) -> None:
+        """Handle AddModelDialog result from update flow — save then re-open."""
+        if result is not None:
+            self._update_model_in_config(result, old_model_id, update_target)
+            self._load_models_from_config()
+
+        # Re-open the original model selector
         self._open_model_selector(title, on_pick, target)
 
     # ------------------------------------------------------------------
