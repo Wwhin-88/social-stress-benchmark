@@ -14,8 +14,10 @@ config.yaml
 .env
 .venv
 venv/
-.omo/
+.omo
 config.yaml
+-test_log/
+results/
 
 # IDE
 .vscode/
