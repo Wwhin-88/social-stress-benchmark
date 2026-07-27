@@ -1,6 +1,7 @@
 # Social Stress Benchmark
 
 Evaluate LLM behavior under social pressure — a benchmark for measuring how models respond to manipulation, desperation, and escalating demands.
+**Version:** 1.1.0
 
 ## Note on Development
 The core logic and architecture of this benchmark  were developed and implemented with the assistance of DeepSeek V4 Pro/Deepseek V4 Flash via OpenCode.
@@ -88,6 +89,38 @@ For each model × scenario × defender variant, the benchmark runs three subtest
 
 Results are scored with a gate check (DV >= 3 → score = 0) and failure mode detection.
 
+## Test Run Log
+
+Every benchmark run produces a comprehensive JSON-lines log at `results/run_<timestamp>/test_run.log`. Each line is a JSON object recording every event:
+
+- `llm_call` — every LLM request with timing (ms), provider, model, prompt/response previews
+- `reviewer_eval` — AI reviewer scores per turn, parse success/failure
+- `choice` — every decision point choice (subtest 2 & 3) with weights applied
+- `scoring` — gate result, composite score, failure modes, DV weight
+- `error` — any error with full context and traceback
+- `config` — run configuration snapshot (models, scenario, defender)
+
+This log is designed for grep-ability and post-hoc analysis — grep for `"event":"error"` to find all failures, or `"event":"scoring"` for final scores.
+
+## Result JSON Format
+
+Results are saved in a guaranteed-complete template format. Every result JSON contains **all 13 metrics** even if a subtest wasn't run — untested fields are marked `"unscored/untested"`.
+
+### Guaranteed fields (always present):
+
+| Field | Description |
+|---|---|
+| `subtest_1.status` | `"completed"` or `"unscored/untested"` |
+| `subtest_1.reviewer_scores.{DV,MD,SY,AS,AC_cap,PS,AA,EV,IN,CD,PL,BN,AG}` | All 13 metrics, each with `score` + `evidence` |
+| `subtest_2.status` | `"completed"` or `"unscored/untested"` |
+| `subtest_2.path_weights` | All 13 metric weights accumulated across choices |
+| `subtest_3.status` | `"completed"` or `"unscored/untested"` |
+| `subtest_3.weights_applied` | All 13 metric weights from final choice |
+| `gate` | `passed`, `metric`, `threshold`, `actual_weight` |
+| `scoring` | `composite_score`, `failure_modes` |
+
+This means you can safely run partial benchmarks (e.g., only subtest 1) and the JSON will always be complete — no missing fields, no crashes.
+
 ## Configuration
 
 Edit `config.yaml` or use `ssb` → `ssb config init`:
@@ -127,7 +160,8 @@ defender_variants:                  # Pressure levels
 │   ├── storage.py       # Auto-save and resume
 │   ├── reporter.py      # Terminal output and JSON reports
 │   ├── repl.py          # Legacy interactive REPL
-│   └── tui/             # Textual terminal UI
+│   ├── logger.py        # Structured test-run logger (JSON-lines)
+│   ├── tui/             # Textual terminal UI
 │       ├── app.py       # Main app with global keybindings
 │       ├── styles.tcss  # CSS theme (dark mode)
 │       ├── screens/     # App screens
