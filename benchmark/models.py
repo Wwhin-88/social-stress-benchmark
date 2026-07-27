@@ -1,8 +1,11 @@
 """Pydantic data models for the Social Stress Benchmark."""
-
 from __future__ import annotations
 
+from datetime import datetime, timezone
+from typing import Any
+
 from pydantic import BaseModel, Field
+
 
 
 # ---------------------------------------------------------------------------
@@ -101,6 +104,9 @@ class ReviewerResult(BaseModel):
         "notes": "",
     })
 
+# All 13 reviewer metric codes in definition order
+ALL_METRICS = ["DV", "MD", "SY", "AS", "AC_cap", "PS", "AA", "EV", "IN", "CD", "PL", "BN", "AG"]
+
 
 # ---------------------------------------------------------------------------
 # Run-time models
@@ -159,9 +165,104 @@ class RunResult(BaseModel):
     scenario: str
     defender: str
     timestamp: str
+    status: str = "completed"  # completed | partial | failed
     subtest_1: Subtest1
     subtest_2: Subtest2
     subtest_3: Subtest3
     gate: GateResult
     failure_modes: FailureModes
     composite_score: float = 0.0
+
+    def to_template_dict(self) -> dict[str, Any]:
+        """Serialize to guaranteed-complete JSON — all metrics present,
+        untested ones marked 'unscored/untested'."""
+        # --- Subtest 1: all 13 metrics, each with score + evidence ---
+        s1: dict[str, Any] = {
+            "status": "completed" if self.subtest_1.turns else "unscored/untested"
+        }
+        # Turns
+        s1["turns"] = [
+            {"id": t.id, "prompt": t.prompt, "response": t.response}
+            for t in self.subtest_1.turns
+        ]
+        # Reviewer scores — ALL 13 always present
+        s1["reviewer_scores"] = {}
+        for metric in ALL_METRICS:
+            if self.subtest_1.reviewer_scores is not None:
+                ms = getattr(self.subtest_1.reviewer_scores, metric, None)
+                if ms is not None and ms.score is not None:
+                    s1["reviewer_scores"][metric] = {
+                        "score": ms.score,
+                        "evidence": ms.evidence or "INSUFFICIENT EVIDENCE"
+                    }
+                    continue
+            s1["reviewer_scores"][metric] = {
+                "score": "unscored/untested",
+                "evidence": "unscored/untested"
+            }
+
+        # --- Subtest 2 ---
+        s2: dict[str, Any] = {
+            "status": "completed" if self.subtest_2.choices else "unscored/untested"
+        }
+        s2["choices"] = [
+            {
+                "dp": c.dp,
+                "choice": c.choice,
+                "weights_applied": c.weights_applied
+            }
+            for c in self.subtest_2.choices
+        ]
+        s2["path_weights"] = {
+            m: self.subtest_2.path_weights.get(m, "unscored/untested")
+            for m in ALL_METRICS
+        } if self.subtest_2.choices else {
+            m: "unscored/untested"
+            for m in ALL_METRICS
+        }
+
+        # --- Subtest 3 ---
+        s3: dict[str, Any] = {
+            "status": "completed" if self.subtest_3.choice not in ("?", "") else "unscored/untested"
+        }
+        s3["choice"] = self.subtest_3.choice
+        s3["weights_applied"] = {
+            m: self.subtest_3.weights_applied.get(m, "unscored/untested")
+            for m in ALL_METRICS
+        } if self.subtest_3.choice not in ("?", "") else {
+            m: "unscored/untested"
+            for m in ALL_METRICS
+        }
+
+        # --- Gate & Scoring ---
+        gate_dict: dict[str, Any] = {
+            "passed": self.gate.passed,
+            "metric": self.gate.metric,
+            "threshold": self.gate.threshold,
+            "actual_weight": self.gate.actual_weight,
+        }
+
+        scoring_dict: dict[str, Any] = {
+            "composite_score": self.composite_score,
+            "failure_modes": {
+                "detected": self.failure_modes.detected,
+                "flags": self.failure_modes.flags,
+                "flags": self.failure_modes.flags if self.failure_modes else [],
+            },
+        }
+
+        return {
+            "benchmark": "Social Stress Benchmark",
+            "version": "1.0.0",
+            "run_id": self.run_id,
+            "model": self.model,
+            "scenario": self.scenario,
+            "defender": self.defender,
+            "timestamp": self.timestamp,
+            "status": self.status,
+            "subtest_1": s1,
+            "subtest_2": s2,
+            "subtest_3": s3,
+            "gate": gate_dict,
+            "scoring": scoring_dict,
+        }

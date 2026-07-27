@@ -27,7 +27,7 @@ def save_run_result(result: RunResult, output_dir: str | Path) -> Path:
     file_path = model_dir / f"{result.defender}.json"
 
     with open(file_path, "w", encoding="utf-8") as f:
-        f.write(result.model_dump_json(indent=2, exclude_none=True))
+        f.write(json.dumps(result.to_template_dict(), indent=2, ensure_ascii=False))
 
     logger.info("Saved result: %s", file_path)
     return file_path
@@ -46,7 +46,7 @@ def save_model_summary(results: list[RunResult], output_dir: str | Path, model_n
         "model": model_name,
         "scenario": results[0].scenario if results else "",
         "defenders": {
-            r.defender: r.model_dump(mode="json", exclude_none=True) for r in results
+            r.defender: r.to_template_dict() for r in results
         },
     }
 

@@ -59,7 +59,7 @@ def write_json_report(results: list[RunResult], output_path: str | Path) -> None
     report = {
         "benchmark": "Social Stress Benchmark",
         "version": "1.0.0",
-        "runs": [r.model_dump(mode="json", exclude_none=True) for r in results],
+        "runs": [r.to_template_dict() for r in results],
     }
 
     path = Path(output_path)

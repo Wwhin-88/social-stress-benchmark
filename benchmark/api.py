@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 MAX_RETRIES = 3
-TIMEOUT = 15000  # seconds (local models like Nemotron on M1 need 60-90s)
+TIMEOUT = 120  # seconds — litellm takes timeout in seconds (60-90s for local models)
 BASE_DELAY = 1.0
 
 
