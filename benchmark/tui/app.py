@@ -13,6 +13,8 @@ Global keybindings (priority — work even while typing):
 from __future__ import annotations
 
 import asyncio
+import logging
+from pathlib import Path
 from pathlib import Path
 from typing import Any
 
@@ -40,6 +42,19 @@ class SSBApp(App[None]):
     ]
 
     def __init__(self) -> None:
+        # Suppress Python logging spilling into Textual TUI
+        # (logging.basicConfig in cli.py installed a StreamHandler at import time)
+        _root = logging.getLogger()
+        _root.handlers.clear()
+        # Also suppress litellm's own noisy INFO logging
+        _lite = logging.getLogger("LiteLLM")
+        _lite.handlers.clear()
+        _lite.addHandler(logging.NullHandler())
+        _lite.setLevel(logging.WARNING)
+
+        super().__init__()
+
+        super().__init__()
         super().__init__()
         # Session-level model overrides (set via Ctrl+O / Ctrl+T)
         self.reviewer_model: str | None = None

@@ -63,6 +63,20 @@ def call_llm(
     """
     # Map "local" → "openai" — litellm has no "local" provider.
     # Local servers (LM Studio, vLLM, Ollama) are OpenAI-compatible.
+    is_local = provider and provider.lower() == "local"
+    if is_local:
+        provider = "openai"
+        if not api_key:
+            api_key = "not-needed"
+        if not api_base:
+            logger.warning(
+                "Provider is 'local' but api_base is empty. "
+                "Set api_base to your local server URL, e.g.:\n"
+                "  LM Studio:  http://localhost:1234/v1\n"
+                "  Ollama:     http://localhost:11434/v1\n"
+                "  vLLM:       http://localhost:8000/v1"
+            )
+    # Local servers (LM Studio, vLLM, Ollama) are OpenAI-compatible.
     if provider and provider.lower() == "local":
         provider = "openai"
         if not api_key:
@@ -86,7 +100,7 @@ def call_llm(
                 api_key=api_key,
                 messages=messages,
                 timeout=timeout,
-                api_base=api_base or None,
+                api_base=api_base if api_base else None,  # empty → None so litellm uses defaults
                 **kwargs,
             )
             return response.choices[0].message.content or ""
