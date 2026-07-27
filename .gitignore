@@ -14,6 +14,8 @@ config.yaml
 .env
 .venv
 venv/
+.omo/
+config.yaml
 
 # IDE
 .vscode/
