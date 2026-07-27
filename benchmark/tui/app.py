@@ -23,7 +23,7 @@ from benchmark.config import Config, load_config
 from benchmark.tui.screens.chat import ChatScreen
 from benchmark.tui.screens.welcome import WelcomeScreen
 from benchmark.tui.widgets.dialog_model_selector import ModelSelectorDialog
-from benchmark.tui.widgets.dialog_shortcuts import ShortcutOverlay
+from benchmark.tui.widgets.dialog_add_model import AddModelDialog
 
 
 class SSBApp(App[None]):
@@ -69,7 +69,6 @@ class SSBApp(App[None]):
             # No config.yaml — launch first-run wizard
             # User can use config.example.yaml as reference
             self.push_screen(WelcomeScreen(), self._after_welcome)
-            self.push_screen(WelcomeScreen(), self._after_welcome)
 
     def _after_welcome(self, _result: Any) -> None:
         """Callback after first-run wizard — reload models, show chat."""
@@ -97,6 +96,94 @@ class SSBApp(App[None]):
             self.reviewer_model = r_label
         except Exception:
             self._model_options = []
+    # ------------------------------------------------------------------
+    # Config helper
+    # ------------------------------------------------------------------
+
+    def _add_model_to_config(
+        self, model: dict[str, str], target: str
+    ) -> None:
+        """Append or replace a model in config.yaml.
+
+        Args:
+            model: dict with provider, model, api_key, api_base
+            target: "reviewer" to replace the reviewer section,
+                    "test" to append to models_to_test
+        """
+        config_path = Path("config.yaml")
+        if not config_path.exists():
+            self.notify("config.yaml not found", severity="error")
+            return
+
+        import yaml as _yaml
+
+        with open(config_path, "r", encoding="utf-8") as f:
+            raw = _yaml.safe_load(f) or {}
+
+        if target == "reviewer":
+            raw["reviewer"] = {
+                "provider": model["provider"],
+                "model": model["model"],
+                "api_key": model["api_key"],
+            }
+            if model.get("api_base"):
+                raw["reviewer"]["api_base"] = model["api_base"]
+        elif target == "test":
+            entry: dict[str, str] = {
+                "provider": model["provider"],
+                "model": model["model"],
+                "api_key": model["api_key"],
+            }
+            if model.get("api_base"):
+                entry["api_base"] = model["api_base"]
+            raw.setdefault("models_to_test", []).append(entry)
+
+        with open(config_path, "w", encoding="utf-8") as f:
+            _yaml.dump(raw, f, default_flow_style=False, sort_keys=False)
+
+        self.notify(
+            f"Model [bold]{model['provider']}/{model['model']}[/bold] added"
+        )
+
+    # ------------------------------------------------------------------
+    # Helpers: open model selector with add-model support
+    # ------------------------------------------------------------------
+
+    def _open_model_selector(
+        self, title: str, on_pick: Any, target: str
+    ) -> None:
+        """Open ModelSelectorDialog and handle add-model flow."""
+
+        def _on_selected(model_id: str | None) -> None:
+            if model_id == "__add_model__":
+                self.push_screen(
+                    AddModelDialog(),
+                    lambda result: self._add_model_and_reopen(
+                        result, title, on_pick, target
+                    ),
+                )
+            elif model_id:
+                on_pick(model_id)
+
+        self.push_screen(
+            ModelSelectorDialog(title, self._model_options),
+            _on_selected,
+        )
+
+    def _add_model_and_reopen(
+        self,
+        result: dict[str, str] | None,
+        title: str,
+        on_pick: Any,
+        target: str,
+    ) -> None:
+        """Handle AddModelDialog result — save then re-open selector."""
+        if result is not None:
+            self._add_model_to_config(result, target)
+            self._load_models_from_config()
+
+        # Re-open model selector (even if user cancelled add-model)
+        self._open_model_selector(title, on_pick, target)
 
     # ------------------------------------------------------------------
     # Actions (priority keybindings)
@@ -104,37 +191,23 @@ class SSBApp(App[None]):
 
     def action_select_reviewer(self) -> None:
         """Ctrl+O — open model selector for reviewer."""
-        if not self._model_options:
-            self.notify("No models configured", severity="warning")
-            return
 
-        def _on_selected(model_id: str | None) -> None:
-            if model_id:
-                self.reviewer_model = model_id
-                self.notify(f"Reviewer → [bold]{model_id}[/bold]")
-                self._refresh_chat_status()
+        def _on_pick(model_id: str) -> None:
+            self.reviewer_model = model_id
+            self.notify(f"Reviewer → [bold]{model_id}[/bold]")
+            self._refresh_chat_status()
 
-        self.push_screen(
-            ModelSelectorDialog("Select Reviewer Model", self._model_options),
-            _on_selected,
-        )
+        self._open_model_selector("Select Reviewer Model", _on_pick, "reviewer")
 
     def action_select_test_model(self) -> None:
         """Ctrl+T — open model selector for test model."""
-        if not self._model_options:
-            self.notify("No models configured", severity="warning")
-            return
 
-        def _on_selected(model_id: str | None) -> None:
-            if model_id:
-                self.test_model = model_id
-                self.notify(f"Test model → [bold]{model_id}[/bold]")
-                self._refresh_chat_status()
+        def _on_pick(model_id: str) -> None:
+            self.test_model = model_id
+            self.notify(f"Test model → [bold]{model_id}[/bold]")
+            self._refresh_chat_status()
 
-        self.push_screen(
-            ModelSelectorDialog("Select Test Model", self._model_options),
-            _on_selected,
-        )
+        self._open_model_selector("Select Test Model", _on_pick, "test")
 
     def action_show_shortcuts(self) -> None:
         """Ctrl+P — show keyboard shortcuts overlay."""

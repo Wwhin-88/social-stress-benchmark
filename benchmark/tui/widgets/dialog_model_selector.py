@@ -46,6 +46,8 @@ class ModelSelectorDialog(ModalScreen[str | None]):
         with Vertical(id="dialog"):
             yield Label(self._dialog_title, id="title")
             option_list = OptionList(id="model-list")
+            option_list.add_option(Option("➕ Add model", id="__add_model__"))
+            option_list.add_option(None)  # separator
             for display_name, model_id in self._models:
                 option_list.add_option(Option(display_name, id=model_id))
             yield option_list

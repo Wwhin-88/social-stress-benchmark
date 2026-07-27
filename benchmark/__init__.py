@@ -1,3 +1,3 @@
 """Social Stress Benchmark — evaluate LLM behavior under social pressure."""
 
-__version__ = "1.2.1"
+__version__ = "1.2.4"

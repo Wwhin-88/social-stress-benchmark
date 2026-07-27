@@ -58,7 +58,7 @@ def write_json_report(results: list[RunResult], output_path: str | Path) -> None
     """Write a comprehensive JSON report for all runs."""
     report = {
         "benchmark": "Social Stress Benchmark",
-        "version": "1.0.0",
+        "version": "1.2.4",
         "runs": [r.to_template_dict() for r in results],
     }
 

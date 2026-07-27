@@ -13,8 +13,6 @@ build/
 config.yaml
 .env
 .venv
-.env
-.venv
 venv/
 
 # IDE

@@ -317,6 +317,25 @@ ModelSelectorDialog OptionList > .option-list--option-highlighted {
     text-style: bold;
 }
 
+/* Add model dialog */
+AddModelDialog > #dialog {
+    border: thick $accent;
+    background: $surface;
+    width: 50;
+    padding: 1 2;
+}
+
+AddModelDialog #title {
+    text-style: bold;
+}
+
+AddModelDialog #error-label {
+    color: $error;
+    text-style: bold;
+    margin-top: 1;
+}
+
+
 /* Shortcut overlay dialog */
 ShortcutOverlay > #dialog {
     border: thick $secondary;
