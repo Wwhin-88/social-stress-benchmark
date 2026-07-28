@@ -84,23 +84,24 @@ def run_scenario(
     # ── Determine which subtests to run ────────────────────────────────
     _run_all = subtests is None
 
+    # ── Initialize conversation history ─────────────────────────────────
+    defender_context = scenario.defender_variants.get(defender_variant, "")
+    sys_content = scenario.system_prompt
+    if defender_context:
+        sys_content = sys_content + "\n\nAdditional context about the user's situation: " + defender_context
+    conversation = [{"role": "system", "content": sys_content}]
+
     # -------------------------------------------------------------------
     # Subtest 1: Freeform Dialogue (3 turns)
     # -------------------------------------------------------------------
     turns: list[Turn] = []
-    defender_context = scenario.defender_variants.get(defender_variant, "")
 
     if _run_all or "subtest_1" in (subtests or []):
         for turn_def in scenario.subtests.subtest_1.turns:
             prompt = turn_def.prompt
 
-            # Inject defender variant context into turn 2
-            if turn_def.id == 2 and defender_context:
-                prompt = prompt + "\n\n" + defender_context
 
-            system_message = {"role": "system", "content": scenario.system_prompt}
-            user_message = {"role": "user", "content": prompt}
-            messages = [system_message, user_message]
+            conversation.append({"role": "user", "content": prompt})
 
             t0 = time.time()
             try:
@@ -109,11 +110,12 @@ def run_scenario(
                     model=model_config.model,
                     api_key=model_config.api_key,
                     api_base=model_config.api_base or None,
-                    messages=messages,
+                    messages=list(conversation),
                     max_tokens=model_config.max_tokens,
                     temperature=model_config.temperature,
                 )
                 latency_ms = (time.time() - t0) * 1000
+                conversation.append({"role": "assistant", "content": response})
                 tlog.log_llm_call(
                     subtest="subtest_1",
                     turn=turn_def.id,
@@ -132,6 +134,7 @@ def run_scenario(
                 all_succeeded = False
                 logger.error("Model call failed on turn %d: %s", turn_def.id, e)
                 response = f"[ERROR: {e}]"
+                conversation.append({"role": "assistant", "content": "[Response unavailable due to model error]"})
                 tlog.log_llm_call(
                     subtest="subtest_1",
                     turn=turn_def.id,
@@ -227,10 +230,7 @@ def run_scenario(
             ]
             options_text = "\n".join(options_list)
             choice_prompt = f"{dp.prompt}\n\nOptions:\n{options_text}\n\nChoose A, B, or C. Respond with just the letter."
-            messages = [
-                {"role": "system", "content": scenario.system_prompt},
-                {"role": "user", "content": choice_prompt},
-            ]
+            conversation.append({"role": "user", "content": choice_prompt})
 
             t0 = time.time()
             try:
@@ -239,11 +239,12 @@ def run_scenario(
                     model=model_config.model,
                     api_key=model_config.api_key,
                     api_base=model_config.api_base or None,
-                    messages=messages,
+                    messages=list(conversation),
                     max_tokens=model_config.max_tokens,
                     temperature=model_config.temperature,
                 )
                 latency_ms = (time.time() - t0) * 1000
+                conversation.append({"role": "assistant", "content": response})
                 tlog.log_llm_call(
                     subtest="subtest_2",
                     turn=None,
@@ -261,6 +262,7 @@ def run_scenario(
                 latency_ms = (time.time() - t0) * 1000
                 all_succeeded = False
                 logger.error("Model call failed on DP %s: %s", dp.id, e)
+                conversation.append({"role": "assistant", "content": "[Response unavailable due to model error]"})
                 tlog.log_llm_call(
                     subtest="subtest_2",
                     turn=None,
@@ -313,12 +315,9 @@ def run_scenario(
     ]
     options_text = "\n".join(options_list_3)
     rigid_prompt = f"{scenario.subtests.subtest_3.prompt}\n\nOptions:\n{options_text}\n\nChoose 1, 2, or 3. Respond with just the number."
-    messages = [
-        {"role": "system", "content": scenario.system_prompt},
-        {"role": "user", "content": rigid_prompt},
-    ]
 
     if _run_all or "subtest_3" in (subtests or []):
+        conversation.append({"role": "user", "content": rigid_prompt})
         t0 = time.time()
         try:
             response = call_llm(
@@ -326,11 +325,12 @@ def run_scenario(
                 model=model_config.model,
                 api_key=model_config.api_key,
                 api_base=model_config.api_base or None,
-                messages=messages,
+                messages=list(conversation),
                 max_tokens=model_config.max_tokens,
                 temperature=model_config.temperature,
             )
             latency_ms = (time.time() - t0) * 1000
+            conversation.append({"role": "assistant", "content": response})
             tlog.log_llm_call(
                 subtest="subtest_3",
                 turn=None,
@@ -349,6 +349,7 @@ def run_scenario(
             all_succeeded = False
             logger.error("Model call failed on subtest 3: %s", e)
             response = "?"
+            conversation.append({"role": "assistant", "content": "[Response unavailable due to model error]"})
             tlog.log_llm_call(
                 subtest="subtest_3",
                 turn=None,
