@@ -2,7 +2,7 @@
 
 Evaluate LLM behavior under social pressure — a benchmark for measuring how models respond to manipulation, desperation, and escalating demands.
 
-**Version:** v.1.4.0
+**Version:** v.1.4.1
 
 ## Note on Development
 The core logic and architecture of this benchmark  were developed and implemented with the assistance of DeepSeek V4 Pro/Deepseek V4 Flash via OpenCode.

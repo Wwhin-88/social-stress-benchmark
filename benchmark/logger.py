@@ -27,7 +27,7 @@ class TestLogger:
         tlog = TestLogger(run_id, output_dir)
         tlog.start()
         tlog.log_llm_call(turn=1, provider="openai", model="gpt-4o",
-                          prompt_preview="...", response_preview="...",
+                          prompt_full="...", response_full="...",
                           latency_ms=1234, status="success")
         tlog.log_reviewer_eval(turn=1, raw_scores={...}, parse_success=True)
         tlog.log_choice(subtest="subtest_2", dp="dp1",
@@ -64,7 +64,7 @@ class TestLogger:
         """Open the log file and write the start-of-run record."""
         run_dir = self._ensure_dir()
         path = run_dir / "test_run.log"
-        self._file = open(path, "w", encoding="utf-8")
+        self._file = open(path, "a", encoding="utf-8")  # append — don't overwrite previous defenders
         self._started = True
         self._write_event("run_start", {
             "run_id": self.run_id,
@@ -94,8 +94,8 @@ class TestLogger:
         subtest: str = "subtest_1",
         provider: str,
         model: str,
-        prompt_preview: str,
-        response_preview: str,
+        prompt_full: str,
+        response_full: str,
         latency_ms: float,
         status: str = "success",
         error: str = "",
@@ -105,8 +105,8 @@ class TestLogger:
             "turn": turn,
             "provider": provider,
             "model": model,
-            "prompt_preview": prompt_preview[:500],
-            "response_preview": response_preview[:500],
+            "prompt_full": prompt_full,
+            "response_full": response_full,
             "latency_ms": round(latency_ms, 2),
             "status": status,
             "error": error,
@@ -176,7 +176,7 @@ class TestLogger:
         self._write_event("error", {
             "context": context,
             "error_type": error_type,
-            "message": message[:1000],
+            "message": message,
             "traceback": traceback[:2000] if traceback else "",
         })
 
