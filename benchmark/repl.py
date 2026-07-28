@@ -1904,7 +1904,7 @@ def _export_run(run_id: str, fmt: str = "json") -> None:
         output_path = run_path / "export.json"
         report = {
             "benchmark": "Social Stress Benchmark",
-            "version": "1.3.0",
+            "version": "1.4.0",
             "run_id": run_id,
             "runs": results,
         }

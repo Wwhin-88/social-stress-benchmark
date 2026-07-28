@@ -252,7 +252,7 @@ class RunResult(BaseModel):
 
         return {
             "benchmark": "Social Stress Benchmark",
-            "version": "1.3.0",
+            "version": "1.4.0",
             "run_id": self.run_id,
             "model": self.model,
             "scenario": self.scenario,
