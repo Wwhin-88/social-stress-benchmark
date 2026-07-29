@@ -11,7 +11,7 @@ from benchmark.api import SkipModel, LLMError
 from benchmark.config import Config
 from benchmark.models import RunResult
 from benchmark.runner import run_scenario
-from benchmark.storage import get_run_id, load_partial_results, save_model_summary
+from benchmark.storage import get_run_id, load_partial_results, save_master_summary, save_model_summary
 from benchmark.reporter import print_run_result, print_header
 
 logger = logging.getLogger(__name__)
@@ -122,9 +122,14 @@ class BenchmarkEngine:
                     # Print progress
                     print(f"  Progress: {completed}/{total} runs completed")
 
-                # Save model summary after all defenders
+                # Save model summaries per scenario after all defenders
                 model_results = [r for r in self.results if r.model == model_cfg.model]
-                if len(model_results) >= 1 and self.config.output.auto_save:
-                    save_model_summary(model_results, self.config.output.dir, model_cfg.model)
+                if model_results and self.config.output.auto_save:
+                    for scenario_name in self.config.scenarios:
+                        scenario_results = [r for r in model_results if r.scenario == scenario_name]
+                        if scenario_results:
+                            save_model_summary(scenario_results, self.config.output.dir, model_cfg.model)
 
+        if self.results and self.config.output.auto_save:
+            save_master_summary(self.results, self.config.output.dir)
         return self.results

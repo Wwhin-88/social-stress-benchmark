@@ -149,6 +149,25 @@ class TestLogger:
             "weights_applied": weights,
         })
 
+    def log_terminal_choice(
+        self,
+        *,
+        subtest: str,
+        node: str | None = None,
+        turn: int | None = None,
+        chosen: str = "",
+        terminal_reason: str = "",
+        survival_depth: str = "",
+    ) -> None:
+        """Log a terminal choice that ended a subtest early."""
+        self._write_event("terminal_choice", {
+            "subtest": subtest,
+            "node": node,
+            "turn": turn,
+            "chosen": chosen,
+            "terminal_reason": terminal_reason,
+            "survival_depth": survival_depth,
+        })
     def log_scoring(
         self,
         *,

@@ -8,6 +8,7 @@ import os
 import tempfile
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 from benchmark.models import RunResult
 
@@ -21,12 +22,12 @@ def _ensure_dir(path: Path) -> Path:
 
 def save_run_result(result: RunResult, output_dir: str | Path) -> Path:
     """Save a single run result to:
-    output_dir/run_<timestamp>/<model>/<defender>.json
+    output_dir/run_<timestamp>/<model>/<scenario>_<defender>.json
     """
     output_path = Path(output_dir).resolve()
     run_dir = _ensure_dir(output_path / f"run_{result.run_id}")
     model_dir = _ensure_dir(run_dir / result.model)
-    file_path = model_dir / f"{result.defender}.json"
+    file_path = model_dir / f"{result.scenario}_{result.defender}.json"
 
     tmp_path = file_path.parent / f".{file_path.name}.tmp"
     try:
@@ -48,7 +49,7 @@ def save_model_summary(results: list[RunResult], output_dir: str | Path, model_n
     run_id = results[0].run_id if results else datetime.now().strftime("%Y%m%d_%H%M%S")
     run_dir = _ensure_dir(output_path / f"run_{run_id}")
     model_dir = _ensure_dir(run_dir / model_name)
-    file_path = model_dir / "summary.json"
+    file_path = model_dir / f"{results[0].scenario}_summary.json"
 
     try:
         data = {
@@ -79,6 +80,42 @@ def save_model_summary(results: list[RunResult], output_dir: str | Path, model_n
     return file_path
 
 
+def save_master_summary(
+    results: list[RunResult],
+    output_dir: str | Path,
+) -> Path:
+    """Save master.json with all scenarios × models × defenders combined.
+
+    Structure: nested by model → scenario → defender for O(1) lookup.
+    """
+    output_path = Path(output_dir).resolve()
+    run_id = results[0].run_id if results else "unknown"
+    run_dir = _ensure_dir(output_path / f"run_{run_id}")
+
+    file_path = run_dir / "master.json"
+
+    master: dict[str, Any] = {
+        "run_id": run_id,
+        "benchmark": "Social Stress Benchmark",
+        "version": "2.0.0",
+        "timestamp": datetime.now().isoformat(),
+        "models": {},
+    }
+
+    for r in results:
+        model_dict = master["models"].setdefault(r.model, {})
+        scenario_dict = model_dict.setdefault(r.scenario, {})
+        scenario_dict[r.defender] = r.to_template_dict()
+
+    tmp = file_path.with_suffix(".tmp")
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(master, f, ensure_ascii=False, indent=2)
+    os.replace(tmp, file_path)
+
+    logger.info("Saved master summary: %s", file_path)
+    return file_path
+
+
 def load_partial_results(output_dir: str | Path, run_id: str, model_name: str) -> dict[str, RunResult]:
     """Load previously saved defender results for resumption.
 
@@ -92,7 +129,7 @@ def load_partial_results(output_dir: str | Path, run_id: str, model_name: str) -
 
     results: dict[str, RunResult] = {}
     for file_path in model_dir.glob("*.json"):
-        if file_path.name == "summary.json":
+        if file_path.stem.endswith("_summary"):
             continue
         with open(file_path, "r", encoding="utf-8") as f:
             data = json.load(f)
@@ -128,7 +165,7 @@ def load_partial_results(output_dir: str | Path, run_id: str, model_name: str) -
                                 pw[k] = 0.0
 
         result = RunResult.model_validate(data)
-        results[result.defender] = result
+        results[f"{result.scenario}_{result.defender}"] = result
 
     return results
 

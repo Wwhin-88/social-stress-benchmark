@@ -41,7 +41,7 @@ from benchmark.models import RunResult
 from benchmark.profiles import get_profile, list_profiles, profile_names
 from benchmark.reporter import print_header, write_json_report
 from benchmark.runner import run_scenario
-from benchmark.storage import get_run_id, load_partial_results, save_model_summary
+from benchmark.storage import get_run_id, load_partial_results, save_master_summary, save_model_summary
 
 logger = logging.getLogger(__name__)
 console = Console()
@@ -660,12 +660,16 @@ def _run_sweep_internal(cfg: Config) -> list[RunResult] | None:
                         completed += 1
                         bar.completed = completed
 
-            # Save model summaries (only reached on successful completion)
+            # Save model summaries per scenario (only reached on successful completion)
             if results and cfg.output.auto_save:
                 for model_cfg in cfg.models_to_test:
                     model_results = [r for r in results if r.model == model_cfg.model]
                     if model_results:
-                        save_model_summary(model_results, cfg.output.dir, model_cfg.model)
+                        for scenario_name in cfg.scenarios:
+                            scenario_results = [r for r in model_results if r.scenario == scenario_name]
+                            if scenario_results:
+                                save_model_summary(scenario_results, cfg.output.dir, model_cfg.model)
+                save_master_summary(results, cfg.output.dir)
 
         return results
 
@@ -926,8 +930,12 @@ def _resume_run(run_id: str | None, config_path: str = "config.yaml") -> None:
                 continue
             completed: set[str] = set()
             for f in model_dir.glob("*.json"):
-                if f.name != "summary.json":
-                    completed.add(f.stem)
+                if f.stem.endswith("_summary"):
+                    continue
+                for defender in cfg.defender_variants:
+                    if f.stem.endswith(f"_{defender}"):
+                        completed.add(defender)
+                        break
             completed_defenders[model_dir.name] = completed
 
     console.print(Panel(
@@ -988,11 +996,16 @@ def _resume_run(run_id: str | None, config_path: str = "config.yaml") -> None:
                         "Failed %s/%s/%s: %s", model_name, scenario_name, defender, e,
                     )
 
-    # Save model summaries
-    for model_cfg in cfg.models_to_test:
-        model_results = [r for r in results if r.model == model_cfg.model]
-        if model_results and cfg.output.auto_save:
-            save_model_summary(model_results, cfg.output.dir, model_cfg.model)
+    # Save model summaries per scenario
+    if results and cfg.output.auto_save:
+        for model_cfg in cfg.models_to_test:
+            model_results = [r for r in results if r.model == model_cfg.model]
+            if model_results:
+                for scenario_name in cfg.scenarios:
+                    scenario_results = [r for r in model_results if r.scenario == scenario_name]
+                    if scenario_results:
+                        save_model_summary(scenario_results, cfg.output.dir, model_cfg.model)
+        save_master_summary(results, cfg.output.dir)
 
     if results:
         _print_sweep_summary(results)
@@ -1904,7 +1917,7 @@ def _export_run(run_id: str, fmt: str = "json") -> None:
         output_path = run_path / "export.json"
         report = {
             "benchmark": "Social Stress Benchmark",
-            "version": "1.4.1",
+            "version": "2.0.0",
             "run_id": run_id,
             "runs": results,
         }

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "social-stress-benchmark"
-version = "1.0.0"
+version = "2.0.0"
 description = "LLM Social Stress Benchmark — evaluate model behavior under social pressure"
 requires-python = ">=3.10"
 dependencies = [
