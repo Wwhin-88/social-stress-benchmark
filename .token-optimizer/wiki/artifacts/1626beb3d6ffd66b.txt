@@ -1,0 +1,18 @@
+{
+  "success": true,
+  "path": "/Users/admin/dev/bench/social-stress-benchmark/frontend/messages/ru.json",
+  "operation": "created",
+  "metadata": {
+    "bytesWritten": 5120,
+    "originalSize": 0,
+    "wasFormatted": false,
+    "linesChanged": 0,
+    "tokensSaved": 0,
+    "tokenCount": 1388,
+    "originalTokenCount": 1388,
+    "compressionRatio": 1,
+    "atomic": true,
+    "verified": true,
+    "duration": 2
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "content": "import createMiddleware from 'next-intl/middleware';\nimport { routing } from '@/i18n/routing';\n\nexport default createMiddleware(routing);\n\nexport const config = {\n  matcher: '/((?!api|trpc|_next|_vercel|.*\\\\..*).*)'\n};\n",
+  "metadata": {
+    "path": "/Users/admin/dev/bench/social-stress-benchmark/frontend/proxy.ts",
+    "size": 219,
+    "encoding": "utf-8",
+    "fileType": "typescript",
+    "hash": "18a40799bd3afaf6837213d9899ee54a474d5c989432b8bc01b34fedf682d202",
+    "fromCache": false,
+    "isDiff": false,
+    "chunked": false,
+    "truncated": false,
+    "tokensSaved": 0,
+    "tokenCount": 61,
+    "originalTokenCount": 61,
+    "compressionRatio": 1
+  }
+}

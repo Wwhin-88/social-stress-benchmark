@@ -1,0 +1,21 @@
+{
+  "success": true,
+  "pattern": "src/**/*.ts",
+  "metadata": {
+    "totalMatches": 4,
+    "returnedCount": 4,
+    "truncated": false,
+    "tokensSaved": 0,
+    "tokenCount": 28,
+    "originalTokenCount": 28,
+    "compressionRatio": 1,
+    "duration": 3,
+    "cacheHit": false
+  },
+  "files": [
+    "src/i18n/navigation.ts",
+    "src/i18n/request.ts",
+    "src/i18n/routing.ts",
+    "src/lib/utils.ts"
+  ]
+}

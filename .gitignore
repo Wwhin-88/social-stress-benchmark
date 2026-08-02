@@ -25,3 +25,32 @@ results/
 
 # macOS
 .DS_Store
+
+# =========================
+# SECRETS & CONFIGS
+# =========================
+.env
+.env.local
+.env.*
+*.pem
+*.key
+
+# =========================
+# BACKEND (FastAPI / Python)
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+*.db
+*.sqlite
+*.sqlite3
+wal.json
+
+# =========================
+# FRONTEND (Next.js / Node)
+# =========================
+node_modules/
+.next/
+out/
+build/
+.DS_Store

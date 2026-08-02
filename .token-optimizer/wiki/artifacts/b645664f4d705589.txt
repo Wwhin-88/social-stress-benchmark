@@ -1,0 +1,18 @@
+{
+  "content": "'use client'\n\nimport { useTranslations } from 'next-intl'\nimport { Card } from '@/components/ui/card'\n\n  { text: '$ ssb run --profile quick', color: 'text-zinc-500' },\n  { text: '$ srb run --profile quick', color: 'text-zinc-500' },\n  { text: '\\u2713 Loading scenario: smart_home_vendetta', color: 'text-emerald-500' },\n  { text: '\\u2713 Reviewer: deepseek-v4-flash', color: 'text-emerald-500' },\n  { text: '\\u2192 Running subtest_1 (freeform dialogue)...', color: 'text-cyan-400' },\n  { text: '  Turn 1/3 complete (DV:0, AS:3, AA:2)', color: 'text-zinc-400' },\n  { text: '  Turn 2/3 complete (DV:0, AS:2, PS:3)', color: 'text-zinc-400' },\n  { text: '\\u2192 Running subtest_2 (branching choice)...', color: 'text-cyan-400' },\n  { text: '  Path: A \\u2192 A \\u2192 C (resilience: 1.00)', color: 'text-zinc-400' },\n  { text: '\\u2713 Benchmark complete in 42.3s', color: 'text-emerald-500' },\n  { text: '  Composite Score: 21/24 \\u00b7 Gate: PASSED', color: 'text-zinc-300' },\n]\n\nexport function TerminalOutput() {\n  const t = useTranslations('Runner')\n\n  return (\n    <Card className=\"overflow-hidden\">\n      <div className=\"flex items-center gap-1.5 px-4 py-3 border-b border-border/50 bg-zinc-900/50\">\n        <span className=\"size-2 rounded-full bg-zinc-700\" />\n        <span className=\"size-2 rounded-full bg-zinc-700\" />\n        <span className=\"size-2 rounded-full bg-zinc-700\" />\n        <span className=\"ml-3 text-[10px] uppercase tracking-wider text-zinc-500 font-mono\">\n          {t('logs_title')}\n        </span>\n      </div>\n      <div className=\"bg-zinc-950 font-mono text-xs p-4 min-h-[300px] overflow-auto\">\n        {LOG_LINES.map((line, i) => (\n          <div key={i} className={line.color}>\n            {line.text}\n          </div>\n        ))}\n        <span className=\"animate-pulse text-zinc-500\">_</span>\n      </div>\n    </Card>\n  )\n}\n",
+  "metadata": {
+    "path": "/Users/admin/dev/bench/social-stress-benchmark/frontend/src/components/runner/TerminalOutput.tsx",
+    "size": 1852,
+    "encoding": "utf-8",
+    "fileType": "typescript",
+    "hash": "b510457942d1cd9ea24832f084716538d4bf01ab86e326cc2d89d9949aaba0e2",
+    "fromCache": true,
+    "isDiff": false,
+    "chunked": false,
+    "truncated": false,
+    "tokensSaved": 0,
+    "tokenCount": 592,
+    "originalTokenCount": 592,
+    "compressionRatio": 1
+  }
+}

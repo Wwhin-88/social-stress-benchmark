@@ -1,0 +1,16 @@
+{
+  "summary": {
+    "success": true,
+    "errorCount": 0,
+    "filesChecked": 1,
+    "duration": 963,
+    "fromCache": false
+  },
+  "errorsByCategory": [],
+  "suggestions": [],
+  "_metrics": {
+    "originalTokens": 125,
+    "compactedTokens": 16,
+    "reductionPercentage": 88
+  }
+}

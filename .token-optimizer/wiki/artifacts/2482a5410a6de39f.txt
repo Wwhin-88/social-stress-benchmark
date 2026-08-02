@@ -1,0 +1,18 @@
+{
+  "content": "import { defineRouting } from 'next-intl/routing';\n\nexport const routing = defineRouting({\n  locales: ['ru', 'en'],\n  defaultLocale: 'ru',\n  localePrefix: 'always'\n});\n\nexport type Locale = (typeof routing.locales)[number];\n",
+  "metadata": {
+    "path": "/Users/admin/dev/bench/social-stress-benchmark/frontend/src/i18n/routing.ts",
+    "size": 224,
+    "encoding": "utf-8",
+    "fileType": "typescript",
+    "hash": "cc6d7e41de526638ac423f56d6f80532fcdf4fbe00c0f33caabee9a8f36f22cf",
+    "fromCache": false,
+    "isDiff": false,
+    "chunked": false,
+    "truncated": false,
+    "tokensSaved": 0,
+    "tokenCount": 56,
+    "originalTokenCount": 56,
+    "compressionRatio": 1
+  }
+}

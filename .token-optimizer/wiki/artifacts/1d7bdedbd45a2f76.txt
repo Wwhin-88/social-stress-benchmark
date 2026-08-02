@@ -1,0 +1,26 @@
+{
+  "success": true,
+  "path": "/Users/admin/dev/bench/social-stress-benchmark/frontend/src/components/ui/chart.tsx",
+  "operation": "applied",
+  "metadata": {
+    "editsApplied": 1,
+    "linesChanged": 1,
+    "originalLines": 374,
+    "finalLines": 373,
+    "tokensSaved": 2239,
+    "tokenCount": 143,
+    "originalTokenCount": 2382,
+    "compressionRatio": 0.0600335852225021,
+    "duration": 4,
+    "verified": true,
+    "wasBackedUp": true
+  },
+  "diff": {
+    "added": [],
+    "removed": [
+      "// Format: { THEME_NAME: CSS_SELECTOR }"
+    ],
+    "unchanged": 12,
+    "unifiedDiff": "--- /Users/admin/dev/bench/social-stress-benchmark/frontend/src/components/ui/chart.tsx\n+++ /Users/admin/dev/bench/social-stress-benchmark/frontend/src/components/ui/chart.tsx\n@@ -1,373 +1,372 @@\n \"use client\"\n \n import * as React from \"react\"\n@@ 2 unchanged lines @@\n \n import { cn } from \"@/lib/utils\"\n \n-// Format: { THEME_NAME: CSS_SELECTOR }\n const THEMES = { light: \"\", dark: \".dark\" } as const\n \n const INITIAL_DIMENSION = { width: 320, height: 200 } as const\n@@ 358 unchanged lines @@\n   ChartLegendContent,\n   ChartStyle,\n }"
+  }
+}

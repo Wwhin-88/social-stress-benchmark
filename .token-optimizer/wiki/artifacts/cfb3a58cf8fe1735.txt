@@ -1,0 +1,18 @@
+{
+  "success": true,
+  "pattern": "**/ru.json",
+  "metadata": {
+    "totalMatches": 1,
+    "returnedCount": 1,
+    "truncated": false,
+    "tokensSaved": 0,
+    "tokenCount": 6,
+    "originalTokenCount": 6,
+    "compressionRatio": 1,
+    "duration": 2,
+    "cacheHit": false
+  },
+  "files": [
+    "messages/ru.json"
+  ]
+}

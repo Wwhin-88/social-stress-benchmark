@@ -1,0 +1,36 @@
+{
+  "success": true,
+  "path": "/Users/admin/dev/bench/social-stress-benchmark/frontend/src/components/layout/LanguageSwitcher.tsx",
+  "operation": "updated",
+  "metadata": {
+    "bytesWritten": 1187,
+    "originalSize": 1220,
+    "wasFormatted": false,
+    "linesChanged": 10,
+    "tokensSaved": 78,
+    "tokenCount": 226,
+    "originalTokenCount": 318,
+    "compressionRatio": 0.710691823899371,
+    "atomic": true,
+    "verified": true,
+    "duration": 2
+  },
+  "diff": {
+    "added": [
+      "import { useLocale, useTranslations } from 'next-intl';",
+      "  const t = useTranslations('Nav');",
+      "      {t(otherLocale)}"
+    ],
+    "removed": [
+      "import { useLocale } from 'next-intl';",
+      "const localeLabels: Record<string, string> = {",
+      "  ru: 'RU',",
+      "  en: 'EN',",
+      "};",
+      "",
+      "      {localeLabels[otherLocale]}"
+    ],
+    "unchanged": 12,
+    "unifiedDiff": "--- /Users/admin/dev/bench/social-stress-benchmark/frontend/src/components/layout/LanguageSwitcher.tsx\n+++ /Users/admin/dev/bench/social-stress-benchmark/frontend/src/components/layout/LanguageSwitcher.tsx\n@@ -1,44 +1,40 @@\n 'use client';\n \n import { useTransition } from 'react';\n-import { useLocale } from 'next-intl';\n+import { useLocale, useTranslations } from 'next-intl';\n import { usePathname, useRouter } from '@/i18n/navigation';\n@@ 3 unchanged lines @@\n \n-const localeLabels: Record<string, string> = {\n-  ru: 'RU',\n-  en: 'EN',\n-};\n-\n export function LanguageSwitcher() {\n@@ 3 unchanged lines @@\n   const currentLocale = useLocale();\n+  const t = useTranslations('Nav');\n \n@@ 19 unchanged lines @@\n       <Globe className=\"h-3.5 w-3.5\" />\n-      {localeLabels[otherLocale]}\n+      {t(otherLocale)}\n     </button>\n   );\n }"
+  }
+}

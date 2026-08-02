@@ -1,0 +1,18 @@
+{
+  "content": "import { NextIntlClientProvider, hasLocale } from 'next-intl';\nimport { getMessages, setRequestLocale } from 'next-intl/server';\nimport { notFound } from 'next/navigation';\nimport { routing } from '@/i18n/routing';\nimport { Header } from '@/components/layout/Header';\n\nexport function generateStaticParams() {\n  return routing.locales.map((locale) => ({ locale }));\n}\n\nexport default async function LocaleLayout({\n  children,\n  params,\n}: {\n  children: React.ReactNode;\n  params: Promise<{ locale: string }>;\n}) {\n  const { locale } = await params;\n  if (!hasLocale(routing.locales, locale)) notFound();\n  setRequestLocale(locale);\n  const messages = await getMessages();\n\n  return (\n    <NextIntlClientProvider messages={messages} locale={locale}>\n      <Header />\n      <main className=\"flex-1\">{children}</main>\n    </NextIntlClientProvider>\n  );\n}\n",
+  "metadata": {
+    "path": "/Users/admin/dev/bench/social-stress-benchmark/frontend/src/app/[locale]/layout.tsx",
+    "size": 852,
+    "encoding": "utf-8",
+    "fileType": "typescript",
+    "hash": "c4f864ac38eab7c7b8d3df91b677f8cddf2465d705807d7ae1ea9d7740e591f1",
+    "fromCache": true,
+    "isDiff": false,
+    "chunked": false,
+    "truncated": false,
+    "tokensSaved": 0,
+    "tokenCount": 200,
+    "originalTokenCount": 200,
+    "compressionRatio": 1
+  }
+}

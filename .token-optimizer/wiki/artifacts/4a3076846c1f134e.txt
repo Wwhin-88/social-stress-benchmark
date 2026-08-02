@@ -1,0 +1,18 @@
+{
+  "content": "// No changes",
+  "metadata": {
+    "path": "/Users/admin/dev/bench/social-stress-benchmark/frontend/src/app/[locale]/layout.tsx",
+    "size": 852,
+    "encoding": "utf-8",
+    "fileType": "typescript",
+    "hash": "c4f864ac38eab7c7b8d3df91b677f8cddf2465d705807d7ae1ea9d7740e591f1",
+    "fromCache": true,
+    "isDiff": true,
+    "chunked": false,
+    "truncated": false,
+    "tokensSaved": 197,
+    "tokenCount": 3,
+    "originalTokenCount": 200,
+    "compressionRatio": 0.015258215962441314
+  }
+}

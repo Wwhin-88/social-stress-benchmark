@@ -1,0 +1,16 @@
+{
+  "success": true,
+  "pattern": "**/layout/Header*",
+  "metadata": {
+    "totalMatches": 0,
+    "returnedCount": 0,
+    "truncated": false,
+    "tokensSaved": 0,
+    "tokenCount": 1,
+    "originalTokenCount": 1,
+    "compressionRatio": 1,
+    "duration": 2,
+    "cacheHit": false
+  },
+  "files": []
+}

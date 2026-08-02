@@ -1,0 +1,18 @@
+{
+  "content": "import type { Metadata } from \"next\";\nimport { Geist, Geist_Mono } from \"next/font/google\";\nimport \"./globals.css\";\n\nconst geistSans = Geist({\n  variable: \"--font-geist-sans\",\n  subsets: [\"latin\", \"cyrillic\"],\n});\n\nconst geistMono = Geist_Mono({\n  variable: \"--font-geist-mono\",\n  subsets: [\"latin\", \"cyrillic\"],\n});\n\nexport const metadata: Metadata = {\n  title: \"Social Stress Benchmark\",\n  description: \"Evaluate LLM behavior under social pressure\",\n};\n    <html lang=\"en\" className={`${geistSans.variable} ${geistMono.variable} dark h-full antialiased`}>\nexport default function RootLayout({\n  children,\n}: Readonly<{\n  children: React.ReactNode;\n}>) {\n  return (\n    <html lang=\"ru\" className={`${geistSans.variable} ${geistMono.variable} dark h-full antialiased`}>\n      <body className=\"min-h-full bg-background text-foreground flex flex-col\">\n        {children}\n      </body>\n    </html>\n  );\n}\n",
+  "metadata": {
+    "path": "/Users/admin/dev/bench/social-stress-benchmark/frontend/src/app/layout.tsx",
+    "size": 902,
+    "encoding": "utf-8",
+    "fileType": "typescript",
+    "hash": "190c36c3d1766418cf72ab14edfff93f5464ce334b44a1129a44fef08aa9edd2",
+    "fromCache": true,
+    "isDiff": false,
+    "chunked": false,
+    "truncated": false,
+    "tokensSaved": 0,
+    "tokenCount": 230,
+    "originalTokenCount": 230,
+    "compressionRatio": 1
+  }
+}

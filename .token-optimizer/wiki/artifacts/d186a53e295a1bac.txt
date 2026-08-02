@@ -1,0 +1,31 @@
+{
+  "content": "-     \"title\": \"[EN] Web Runner\",\n    \"subtitle\": \"[EN] Запуск и мониторинг бенчмарка\",\n    \"config_title\": \"[EN] Конфигурация\",\n\n+     \"title\": \"Web Runner\",\n    \"subtitle\": \"Benchmark execution and monitoring\",\n    \"config_title\": \"Configuration\",\n\n-     \"logs_title\": \"[EN] Логи выполнения\",\n    \"radar_title\": \"[EN] Радар метрик\",\n\n+     \"logs_title\": \"Execution Logs\",\n    \"radar_title\": \"Metrics Radar\",\n\n-     \"no_data\": \"[EN] Нет данных. Запустите бенчмарк для отображения результатов.\",\n\n+     \"no_data\": \"No data. Run a benchmark to display results.\",\n",
+  "metadata": {
+    "path": "/Users/admin/dev/bench/social-stress-benchmark/frontend/messages/en.json",
+    "size": 3047,
+    "encoding": "utf-8",
+    "fileType": "json",
+    "hash": "5fc276913bb52c1e37b897b611571adcf39afddf2df78bccecb9ae078982c01c",
+    "fromCache": true,
+    "isDiff": true,
+    "chunked": false,
+    "truncated": false,
+    "tokensSaved": 676,
+    "tokenCount": 180,
+    "originalTokenCount": 856,
+    "compressionRatio": 0.2006426276329882
+  },
+  "diff": {
+    "added": [
+      "    \"title\": \"Web Runner\",\n    \"subtitle\": \"Benchmark execution and monitoring\",\n    \"config_title\": \"Configuration\",\n",
+      "    \"logs_title\": \"Execution Logs\",\n    \"radar_title\": \"Metrics Radar\",\n",
+      "    \"no_data\": \"No data. Run a benchmark to display results.\",\n"
+    ],
+    "removed": [
+      "    \"title\": \"[EN] Web Runner\",\n    \"subtitle\": \"[EN] Запуск и мониторинг бенчмарка\",\n    \"config_title\": \"[EN] Конфигурация\",\n",
+      "    \"logs_title\": \"[EN] Логи выполнения\",\n    \"radar_title\": \"[EN] Радар метрик\",\n",
+      "    \"no_data\": \"[EN] Нет данных. Запустите бенчмарк для отображения результатов.\",\n"
+    ],
+    "unchanged": 80
+  }
+}

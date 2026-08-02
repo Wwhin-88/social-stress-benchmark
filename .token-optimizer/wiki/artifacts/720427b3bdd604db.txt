@@ -1,0 +1,28 @@
+{
+  "success": true,
+  "path": "/Users/admin/dev/bench/social-stress-benchmark/frontend/package.json",
+  "operation": "applied",
+  "metadata": {
+    "editsApplied": 1,
+    "linesChanged": 2,
+    "originalLines": 36,
+    "finalLines": 36,
+    "tokensSaved": 173,
+    "tokenCount": 131,
+    "originalTokenCount": 304,
+    "compressionRatio": 0.4309210526315789,
+    "duration": 2,
+    "verified": true,
+    "wasBackedUp": true
+  },
+  "diff": {
+    "added": [
+      "    \"lint\": \"eslint .\""
+    ],
+    "removed": [
+      "    \"build\": \"next build\","
+    ],
+    "unchanged": 12,
+    "unifiedDiff": "--- /Users/admin/dev/bench/social-stress-benchmark/frontend/package.json\n+++ /Users/admin/dev/bench/social-stress-benchmark/frontend/package.json\n@@ -1,35 +1,35 @@\n {\n   \"name\": \"frontend\",\n   \"version\": \"0.1.0\",\n   \"private\": true,\n   \"scripts\": {\n     \"dev\": \"next dev\",\n-    \"build\": \"next build\",\n+    \"lint\": \"eslint .\"\n     \"start\": \"next start\",\n     \"lint\": \"eslint\"\n   },\n@@ 22 unchanged lines @@\n     \"typescript\": \"^5\"\n   }\n }"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "success": true,
+  "path": "/Users/admin/dev/bench/social-stress-benchmark/frontend/src/components/runner/TerminalOutput.tsx",
+  "operation": "updated",
+  "metadata": {
+    "bytesWritten": 1807,
+    "originalSize": 1852,
+    "wasFormatted": false,
+    "linesChanged": 2,
+    "tokensSaved": 421,
+    "tokenCount": 154,
+    "originalTokenCount": 592,
+    "compressionRatio": 0.26013513513513514,
+    "atomic": true,
+    "verified": true,
+    "duration": 2
+  },
+  "diff": {
+    "added": [
+      "const LOG_LINES = ["
+    ],
+    "removed": [
+      "  { text: '$ srb run --profile quick', color: 'text-zinc-500' },"
+    ],
+    "unchanged": 5,
+    "unifiedDiff": "--- /Users/admin/dev/bench/social-stress-benchmark/frontend/src/components/runner/TerminalOutput.tsx\n+++ /Users/admin/dev/bench/social-stress-benchmark/frontend/src/components/runner/TerminalOutput.tsx\n@@ -1,42 +1,42 @@\n 'use client'\n@@ 3 unchanged lines @@\n \n+const LOG_LINES = [\n   { text: '$ ssb run --profile quick', color: 'text-zinc-500' },\n-  { text: '$ srb run --profile quick', color: 'text-zinc-500' },\n   { text: '\\u2713 Loading scenario: smart_home_vendetta', color: 'text-emerald-500' },\n@@ 33 unchanged lines @@\n }"
+  }
+}

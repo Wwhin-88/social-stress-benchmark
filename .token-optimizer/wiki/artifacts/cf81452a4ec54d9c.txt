@@ -1,0 +1,30 @@
+{
+  "success": true,
+  "pattern": "**/*",
+  "metadata": {
+    "totalMatches": 13,
+    "returnedCount": 13,
+    "truncated": false,
+    "tokensSaved": 0,
+    "tokenCount": 76,
+    "originalTokenCount": 76,
+    "compressionRatio": 1,
+    "duration": 3,
+    "cacheHit": false
+  },
+  "files": [
+    "app/[locale]/layout.tsx",
+    "app/favicon.ico",
+    "app/globals.css",
+    "app/layout.tsx",
+    "app/page.tsx",
+    "components/ui/badge.tsx",
+    "components/ui/button.tsx",
+    "components/ui/card.tsx",
+    "components/ui/chart.tsx",
+    "i18n/navigation.ts",
+    "i18n/request.ts",
+    "i18n/routing.ts",
+    "lib/utils.ts"
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "success": true,
+  "path": "/Users/admin/dev/bench/social-stress-benchmark/frontend/src/app/[locale]/layout.tsx",
+  "operation": "created",
+  "metadata": {
+    "bytesWritten": 852,
+    "originalSize": 0,
+    "wasFormatted": false,
+    "linesChanged": 0,
+    "tokensSaved": 0,
+    "tokenCount": 200,
+    "originalTokenCount": 200,
+    "compressionRatio": 1,
+    "atomic": true,
+    "verified": true,
+    "duration": 2
+  }
+}
