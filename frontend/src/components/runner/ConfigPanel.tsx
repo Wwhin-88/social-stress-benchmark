@@ -230,7 +230,7 @@ export function ConfigPanel() {
           <Shield className="size-3" />
           {t('defender_label')}
         </label>
-        <div className="flex rounded-lg bg-zinc-900 p-0.5 gap-0.5">
+        <div className="grid grid-cols-2 gap-0.5 rounded-lg bg-zinc-900 p-0.5">
           {DEFENDER_VARIANTS.map((variant) => {
             const isActive = defenderVariant === variant
             return (
@@ -238,7 +238,7 @@ export function ConfigPanel() {
                 key={variant}
                 type="button"
                 onClick={() => setDefenderVariant(variant)}
-                className={`flex-1 text-xs font-medium py-1.5 rounded-md transition-all cursor-pointer ${
+                className={`whitespace-nowrap text-center text-xs font-medium py-1.5 rounded-md transition-all cursor-pointer ${
                   isActive
                     ? 'bg-red-500/10 text-red-400 ring-1 ring-red-500/20'
                     : 'text-zinc-500 hover:text-zinc-300'

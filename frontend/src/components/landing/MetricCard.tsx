@@ -55,7 +55,7 @@ export function MetricCard({ code }: MetricCardProps) {
             badgeClasses[badgeVariant],
           )}
         >
-          {code}
+          {code.replace('_cap', '')}
         </span>
       </div>
 
