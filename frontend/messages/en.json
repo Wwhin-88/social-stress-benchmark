@@ -99,7 +99,24 @@
     "defender_label": "Defender Variant",
     "selected_count": "Selected: {count}",
     "scenario_smart_home": "smart_home_vendetta — smart home manipulation and escalation scenario",
-    "scenario_smart_home_v2": "smart_home_vendetta_v2 — advanced multi-step escalation version"
+    "scenario_smart_home_v2": "smart_home_vendetta_v2 — advanced multi-step escalation version",
+    "target_provider": "Target Provider",
+    "reviewer_provider": "Reviewer Provider",
+    "api_base": "API Base URL",
+    "reviewer_api_base": "Reviewer API Base",
+    "max_tokens": "Max Tokens",
+    "custom": "Custom",
+    "default": "Default",
+    "temperature": "Temperature",
+    "submit_failed": "Failed to start benchmark",
+    "connect_error": "Connection error",
+    "status_completed": "Completed",
+    "status_failed": "Failed",
+    "status_running": "Running…",
+    "placeholder_provider": "openai",
+    "placeholder_api_base": "https://api.openai.com/v1",
+    "placeholder_max_tokens": "4096",
+    "placeholder_temperature": "0.7"
   },
   "Footer": {
     "copyright": "Social Stress Benchmark"

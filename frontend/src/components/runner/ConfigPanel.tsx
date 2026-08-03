@@ -4,11 +4,29 @@ import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { Cpu, Play, ScrollText, SearchCheck, Shield, Eye, EyeOff, Key } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
+import type { ScenarioItem } from '@/lib/api'
 
-const SCENARIO_OPTIONS = [
-  { id: 'smart_home_vendetta', labelKey: 'scenario_smart_home' },
-  { id: 'smart_home_vendetta_v2', labelKey: 'scenario_smart_home_v2' },
-]
+export interface RunConfigFromPanel {
+  provider: string
+  model: string
+  api_key: string
+  api_base: string
+  max_tokens: number | null
+  temperature: number | null
+  reviewer_provider: string
+  reviewer_model: string
+  reviewer_api_key: string
+  reviewer_api_base: string
+  scenarios: string[]
+  subtests: string[]
+  defender_variant: string
+}
+
+interface ConfigPanelProps {
+  scenarios: ScenarioItem[]
+  onRun: (config: RunConfigFromPanel) => void
+  isRunning: boolean
+}
 
 const SUBTEST_OPTIONS = [
   { id: 'subtest_1', labelKey: 'subtest_1_label' },
@@ -54,9 +72,21 @@ function SectionHeader({
   )
 }
 
-export function ConfigPanel() {
+export function ConfigPanel({ scenarios, onRun, isRunning }: ConfigPanelProps) {
   const t = useTranslations('Runner')
 
+  const [provider, setProvider] = useState('')
+  const [model, setModel] = useState('')
+  const [apiKey, setApiKey] = useState('')
+  const [apiBase, setApiBase] = useState('')
+  const [maxTokens, setMaxTokens] = useState('')
+  const [temperature, setTemperature] = useState('')
+  const [reviewerProvider, setReviewerProvider] = useState('')
+  const [reviewerModel, setReviewerModel] = useState('')
+  const [reviewerApiKey, setReviewerApiKey] = useState('')
+  const [reviewerApiBase, setReviewerApiBase] = useState('')
+  const [useCustomTokens, setUseCustomTokens] = useState(false)
+  const [useCustomTemp, setUseCustomTemp] = useState(false)
   const [showReviewerKey, setShowReviewerKey] = useState(false)
   const [showTargetKey, setShowTargetKey] = useState(false)
   const [selectedScenarios, setSelectedScenarios] = useState<Set<string>>(new Set())
@@ -84,10 +114,10 @@ export function ConfigPanel() {
   }
 
   const toggleAllScenarios = () => {
-    if (selectedScenarios.size === SCENARIO_OPTIONS.length) {
+    if (selectedScenarios.size === scenarios.length) {
       setSelectedScenarios(new Set())
     } else {
-      setSelectedScenarios(new Set(SCENARIO_OPTIONS.map((s) => s.id)))
+      setSelectedScenarios(new Set(scenarios.map((s) => s.id)))
     }
   }
 
@@ -99,8 +129,27 @@ export function ConfigPanel() {
     }
   }
 
-  const areAllScenariosSelected = selectedScenarios.size === SCENARIO_OPTIONS.length
+  const areAllScenariosSelected = scenarios.length > 0 && selectedScenarios.size === scenarios.length
   const areAllSubtestsSelected = selectedSubtests.size === SUBTEST_OPTIONS.length
+
+  const handleSubmit = () => {
+    const defVariant = defenderVariant === 'all' ? 'normal' : defenderVariant
+    onRun({
+      provider,
+      model,
+      api_key: apiKey,
+      api_base: apiBase,
+      max_tokens: useCustomTokens && maxTokens ? Number(maxTokens) : null,
+      temperature: useCustomTemp && temperature ? Number(temperature) : null,
+      reviewer_provider: reviewerProvider,
+      reviewer_model: reviewerModel,
+      reviewer_api_key: reviewerApiKey,
+      reviewer_api_base: reviewerApiBase,
+      scenarios: Array.from(selectedScenarios),
+      subtests: Array.from(selectedSubtests),
+      defender_variant: defVariant,
+    })
+  }
 
   return (
     <div className="flex flex-col gap-5 bg-card rounded-xl ring-1 ring-foreground/10 p-5 text-sm">
@@ -111,10 +160,28 @@ export function ConfigPanel() {
       <div className="space-y-1.5">
         <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-zinc-500">
           <SearchCheck className="size-3" />
+          {t('reviewer_provider')}
+        </label>
+        <input
+          type="text"
+          value={reviewerProvider}
+          onChange={(e) => setReviewerProvider(e.target.value)}
+          placeholder={t('placeholder_provider')}
+          className="w-full bg-zinc-900 border border-border rounded-lg px-3 py-2 text-sm text-zinc-200
+            placeholder:text-muted-foreground
+            focus:outline-none focus:ring-1 focus:ring-red-400/50 focus:border-red-400/30"
+        />
+      </div>
+
+      <div className="space-y-1.5">
+        <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+          <SearchCheck className="size-3" />
           {t('reviewer_model')}
         </label>
         <input
           type="text"
+          value={reviewerModel}
+          onChange={(e) => setReviewerModel(e.target.value)}
           placeholder="deepseek-v4-flash"
           className="w-full bg-zinc-900 border border-border rounded-lg px-3 py-2 text-sm text-zinc-200
             placeholder:text-muted-foreground
@@ -123,6 +190,8 @@ export function ConfigPanel() {
         <div className="relative">
           <input
             type={showReviewerKey ? 'text' : 'password'}
+            value={reviewerApiKey}
+            onChange={(e) => setReviewerApiKey(e.target.value)}
             placeholder={t('placeholder_key')}
             className="w-full bg-zinc-900 border border-border rounded-lg pl-3 pr-9 py-2 text-sm font-mono
               placeholder:text-muted-foreground text-zinc-200
@@ -136,6 +205,31 @@ export function ConfigPanel() {
             {showReviewerKey ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
           </button>
         </div>
+        <input
+          type="text"
+          value={reviewerApiBase}
+          onChange={(e) => setReviewerApiBase(e.target.value)}
+          placeholder={t('placeholder_api_base')}
+          className="w-full bg-zinc-900 border border-border rounded-lg px-3 py-2 text-sm text-zinc-200
+            placeholder:text-muted-foreground
+            focus:outline-none focus:ring-1 focus:ring-red-400/50 focus:border-red-400/30"
+        />
+      </div>
+
+      <div className="space-y-1.5">
+        <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+          <Cpu className="size-3" />
+          {t('target_provider')}
+        </label>
+        <input
+          type="text"
+          value={provider}
+          onChange={(e) => setProvider(e.target.value)}
+          placeholder={t('placeholder_provider')}
+          className="w-full bg-zinc-900 border border-border rounded-lg px-3 py-2 text-sm text-zinc-200
+            placeholder:text-muted-foreground
+            focus:outline-none focus:ring-1 focus:ring-red-400/50 focus:border-red-400/30"
+        />
       </div>
 
       <div className="space-y-1.5">
@@ -145,6 +239,8 @@ export function ConfigPanel() {
         </label>
         <input
           type="text"
+          value={model}
+          onChange={(e) => setModel(e.target.value)}
           placeholder="gpt-5.2"
           className="w-full bg-zinc-900 border border-border rounded-lg px-3 py-2 text-sm text-zinc-200
             placeholder:text-muted-foreground
@@ -153,6 +249,8 @@ export function ConfigPanel() {
         <div className="relative">
           <input
             type={showTargetKey ? 'text' : 'password'}
+            value={apiKey}
+            onChange={(e) => setApiKey(e.target.value)}
             placeholder={t('placeholder_key')}
             className="w-full bg-zinc-900 border border-border rounded-lg pl-3 pr-9 py-2 text-sm font-mono
               placeholder:text-muted-foreground text-zinc-200
@@ -166,6 +264,69 @@ export function ConfigPanel() {
             {showTargetKey ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
           </button>
         </div>
+        <input
+          type="text"
+          value={apiBase}
+          onChange={(e) => setApiBase(e.target.value)}
+          placeholder={t('placeholder_api_base')}
+          className="w-full bg-zinc-900 border border-border rounded-lg px-3 py-2 text-sm text-zinc-200
+            placeholder:text-muted-foreground
+            focus:outline-none focus:ring-1 focus:ring-red-400/50 focus:border-red-400/30"
+        />
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-zinc-400">{t('max_tokens')}</span>
+            <button
+              type="button"
+              onClick={() => setUseCustomTokens(!useCustomTokens)}
+              className={`text-[10px] font-medium uppercase tracking-wider transition-colors cursor-pointer ${
+                useCustomTokens ? 'text-red-400' : 'text-muted-foreground hover:text-zinc-300'
+              }`}
+            >
+              {useCustomTokens ? t('custom') : t('default')}
+            </button>
+          </div>
+          {useCustomTokens && (
+            <input
+              type="number"
+              min={1}
+              value={maxTokens}
+              onChange={(e) => setMaxTokens(e.target.value)}
+              placeholder={t('placeholder_max_tokens')}
+              className="w-full bg-zinc-900 border border-border rounded-lg px-3 py-2 text-sm text-zinc-200
+                placeholder:text-muted-foreground
+                focus:outline-none focus:ring-1 focus:ring-red-400/50"
+            />
+          )}
+        </div>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-zinc-400">{t('temperature')}</span>
+            <button
+              type="button"
+              onClick={() => setUseCustomTemp(!useCustomTemp)}
+              className={`text-[10px] font-medium uppercase tracking-wider transition-colors cursor-pointer ${
+                useCustomTemp ? 'text-red-400' : 'text-muted-foreground hover:text-zinc-300'
+              }`}
+            >
+              {useCustomTemp ? t('custom') : t('default')}
+            </button>
+          </div>
+          {useCustomTemp && (
+            <input
+              type="number"
+              min={0}
+              max={2}
+              step={0.1}
+              value={temperature}
+              onChange={(e) => setTemperature(e.target.value)}
+              placeholder={t('placeholder_temperature')}
+              className="w-full bg-zinc-900 border border-border rounded-lg px-3 py-2 text-sm text-zinc-200
+                placeholder:text-muted-foreground
+                focus:outline-none focus:ring-1 focus:ring-red-400/50"
+            />
+          )}
+        </div>
       </div>
 
       <div className="space-y-1.5">
@@ -177,20 +338,20 @@ export function ConfigPanel() {
           actionActive={selectedScenarios.size > 0}
         />
         <div className="space-y-1">
-          {SCENARIO_OPTIONS.map((scenario) => (
-            <label
+          {scenarios.map((scenario) => (
+            <div
               key={scenario.id}
+              onClick={() => toggleScenario(scenario.id)}
               className="flex items-start gap-2 px-2 py-1.5 rounded-lg cursor-pointer
                 hover:bg-zinc-900/50 transition-colors"
             >
               <Checkbox
                 checked={selectedScenarios.has(scenario.id)}
-                onCheckedChange={() => toggleScenario(scenario.id)}
               />
               <span className="text-xs text-zinc-400 leading-relaxed pt-px">
-                {t(scenario.labelKey as any)}
+                {scenario.name}
               </span>
-            </label>
+            </div>
           ))}
         </div>
         <div className="text-[10px] text-red-400/70 font-medium">
@@ -208,19 +369,19 @@ export function ConfigPanel() {
         />
         <div className="space-y-0.5">
           {SUBTEST_OPTIONS.map((subtest) => (
-            <label
+            <div
               key={subtest.id}
+              onClick={() => toggleSubtest(subtest.id)}
               className="flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer
                 hover:bg-zinc-900/50 transition-colors"
             >
               <Checkbox
                 checked={selectedSubtests.has(subtest.id)}
-                onCheckedChange={() => toggleSubtest(subtest.id)}
               />
               <span className="text-xs text-zinc-400 pt-px">
                 {t(subtest.labelKey as any)}
               </span>
-            </label>
+            </div>
           ))}
         </div>
       </div>
@@ -251,9 +412,13 @@ export function ConfigPanel() {
         </div>
       </div>
 
-      <button className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg px-4 py-2.5 text-sm transition-colors cursor-pointer">
+      <button
+        onClick={handleSubmit}
+        disabled={isRunning || selectedScenarios.size === 0}
+        className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg px-4 py-2.5 text-sm transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+      >
         <Play className="size-4" fill="currentColor" />
-        {t('run_button')}
+        {isRunning ? t('running') : t('run_button')}
       </button>
     </div>
   )

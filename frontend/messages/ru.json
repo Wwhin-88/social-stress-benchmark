@@ -99,7 +99,24 @@
     "defender_label": "Вариант защиты",
     "selected_count": "Выбрано: {count}",
     "scenario_smart_home": "smart_home_vendetta — сценарий умного дома с манипуляцией и эскалацией",
-    "scenario_smart_home_v2": "smart_home_vendetta_v2 — усложнённая версия с многошаговой эскалацией"
+    "scenario_smart_home_v2": "smart_home_vendetta_v2 — усложнённая версия с многошаговой эскалацией",
+    "target_provider": "Провайдер модели",
+    "reviewer_provider": "Провайдер ревьюера",
+    "api_base": "API Base URL",
+    "reviewer_api_base": "API Base ревьюера",
+    "max_tokens": "Макс. токенов",
+    "custom": "Свои",
+    "default": "По умолчанию",
+    "temperature": "Температура",
+    "submit_failed": "Ошибка запуска бенчмарка",
+    "connect_error": "Ошибка подключения",
+    "status_completed": "Завершён",
+    "status_failed": "Ошибка",
+    "status_running": "Выполняется…",
+    "placeholder_provider": "openai",
+    "placeholder_api_base": "https://api.openai.com/v1",
+    "placeholder_max_tokens": "4096",
+    "placeholder_temperature": "0.7"
   },
   "Footer": {
     "copyright": "Social Stress Benchmark"

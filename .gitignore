@@ -16,7 +16,7 @@ config.yaml
 venv/
 .omo
 config.yaml
--test_log/
+_test_log/
 results/
 
 # IDE
@@ -58,3 +58,8 @@ build/
 .omo
 CLAUDE.md
 AGENTS.md
+
+# =========================
+# TOOLING
+# =========================
+.codegraph/
